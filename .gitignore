@@ -1,0 +1,24 @@
+# ---- secrets (never commit) ----
+scripts/secrets.local.json
+ansible/.vault_pass
+*.pem
+terraform/keys/
+# ---- terraform local state / cache ----
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/tfplan
+terraform/terraform.tfvars
+crash.log
+# ---- ansible runtime ----
+ansible/venv/
+ansible/collections/
+ansible/logs/*.log
+ansible/.ansible/
+ansible/backups/*_*.cfg
+# ---- python / os ----
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+~$*.docx
