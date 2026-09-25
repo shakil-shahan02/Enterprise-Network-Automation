@@ -5,3 +5,4 @@
       - command: write memory
         prompt: '\[confirm\]'
         answer: "\r"
+  when: not ansible_check_mode   # a dry run must never write NVRAM

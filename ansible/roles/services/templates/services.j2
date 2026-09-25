@@ -8,7 +8,6 @@ ip dhcp pool {{ site_name }}-{{ v.name }}
  default-router {{ v.gateway }}
  dns-server {{ dns_server }}
  domain-name {{ domain_name }}
- lease 1
 {% endfor %}
 {% if dns_records is defined %}
 ip dns server

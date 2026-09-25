@@ -5,3 +5,6 @@ ospf:
   process_id: 1
   reference_bandwidth: 1000
   dead_interval: 120        # tolerant of Dynamips emulator pauses (hello stays 10 s)
+archive_notify: notify syslog contenttype plaintext   # IOS 15.x syntax
+snmp_priv_proto: aes 128                               # SNMPv3 privacy on IOS 15.x
+snmp_group_suffix: ""

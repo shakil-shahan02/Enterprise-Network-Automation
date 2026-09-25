@@ -1,0 +1,20 @@
+---
+- name: "Part B-9 | Prove SSH v2 management and the legal banner pushed by the baseline role"
+  hosts: R1-HQ
+  gather_facts: false
+  tasks:
+    - name: Read banner, SSH server state and the live automation session
+      cisco.ios.ios_command:
+        commands:
+          - show running-config | begin banner motd
+          - show ip ssh
+          - show ssh
+      register: out
+
+    - name: Banner (running-config)
+      ansible.builtin.debug:
+        msg: "{{ out.stdout_lines[0][:8] }}"
+
+    - name: SSH server + active sessions (this Ansible connection is one of them)
+      ansible.builtin.debug:
+        msg: "{{ out.stdout_lines[1][:3] + out.stdout_lines[2] }}"

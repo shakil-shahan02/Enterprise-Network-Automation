@@ -2,6 +2,8 @@
 # VLAN + trunk/access port management for EtherSwitch (NM-16ESW) switches.
 # NM-16ESW stores VLANs in 'vlan database' mode, so we read the current VLAN table and
 # only create what is missing (idempotent), then manage ports with ios_config.
+# Lines IOS never displays ('no shutdown', default 'switchport mode access') are not pushed,
+# so repeated runs report changed=0.
 - name: Read current VLAN table
   cisco.ios.ios_command:
     commands: show vlan-switch brief
@@ -14,12 +16,18 @@
   vars:
     present_ids: "{{ vlan_table.stdout[0] | regex_findall('(?m)^(\\d+)\\s') | map('int') | list }}"
 
+- name: "Check mode: VLANs that WOULD be created"
+  ansible.builtin.debug:
+    msg: "would create: {{ missing_vlans | map(attribute='id') | zip(missing_vlans | map(attribute='name')) | map('join', ' ') | list }}"
+  when: ansible_check_mode and missing_vlans | length > 0
+  changed_when: true
+
 - name: Create missing VLANs in the VLAN database
   ansible.netcommon.cli_command:
     command: "{{ item }}"
   loop: "{{ ['vlan database'] + (missing_vlans | map(attribute='id') | zip(missing_vlans | map(attribute='name'))
             | map('join', ' name ') | map('regex_replace', '^', 'vlan ') | list) + ['apply', 'exit'] }}"
-  when: missing_vlans | length > 0
+  when: missing_vlans | length > 0 and not ansible_check_mode   # cli_command has no check mode
   changed_when: true
 
 - name: Trunk ports (802.1Q uplinks)
@@ -28,7 +36,6 @@
     lines:
       - "description TRUNK to {{ item.peer }}"
       - switchport mode trunk
-      - no shutdown
   loop: "{{ trunks }}"
   loop_control: {label: "{{ item.port }}"}
   notify: save config
@@ -38,10 +45,8 @@
     parents: "interface {{ item.port }}"
     lines:
       - "description ACCESS {{ item.host }} (VLAN {{ item.vlan }})"
-      - switchport mode access
-      - "switchport access vlan {{ item.vlan }}"
+      - "switchport access vlan {{ item.vlan }}"   # access mode is the NM-16ESW default
       - spanning-tree portfast
-      - no shutdown
   loop: "{{ access_ports }}"
   loop_control: {label: "{{ item.port }} -> VLAN {{ item.vlan }}"}
   notify: save config
@@ -58,5 +63,4 @@
     lines:
       - description MGMT
       - "ip address {{ mgmt_ip }} 255.255.255.0"
-      - no shutdown
   notify: save config

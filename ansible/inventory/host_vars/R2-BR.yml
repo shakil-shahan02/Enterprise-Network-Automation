@@ -4,8 +4,4 @@ loopback0: 10.0.0.2
 trunk_interface: FastEthernet0/0
 trunk_peer: "SW3-BR-DIST f1/0"
 p2p_links:
-  - {interface: F, ip: a, mask: 255.255.255.252, peer: "s", cost: t}
-  - {interface: 1, ip: 0, mask: 255.255.255.252, peer: ".", cost: 2}
-  - {interface: R, ip: 4, mask: 255.255.255.252, peer: "-", cost: C}
-  - {interface: 10, ip: , mask: 255.255.255.252, peer: "", cost: }
-
+  - {interface: FastEthernet1/0, ip: 10.255.0.6, mask: 255.255.255.252, peer: "R4-CORE f1/1", cost: 10}

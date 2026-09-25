@@ -11,8 +11,7 @@
       - no ip http secure-server
       - no ip source-route
       - ip ssh version 2
-      - ip ssh time-out 60
-      - ip ssh authentication-retries 3
+      - ip ssh time-out 60              # (authentication-retries 3 is the IOS default)
       - login block-for 120 attempts 3 within 60
       - login on-failure log
       - login on-success log
@@ -38,9 +37,8 @@
   cisco.ios.ios_config:
     lines:
       - logging buffered 16384 informational
-      - logging trap informational
       - "logging source-interface {{ logging_source }}"
-      - "logging host {{ syslog_server }}"
+      - "logging {{ syslog_server }}"   # IOS stores 'logging host X' as 'logging X'; trap level informational is the default
   notify: save config
 
 - name: DNS client
@@ -55,7 +53,7 @@
     parents: [archive, log config]
     lines:
       - logging enable
-      - notify syslog contenttype plaintext
+      - "{{ archive_notify }}"
       - hidekeys
   notify: save config
 
@@ -70,8 +68,7 @@
     parents: line vty 0 4
     lines:
       - "access-class {{ mgmt_acl.name }} in"
-      - exec-timeout 10 0
-      - login local
+      - login local                     # (exec-timeout 10 0 is the IOS default)
       - transport preferred none
       - transport input ssh
   notify: save config
@@ -94,7 +91,7 @@
 - name: SNMPv3 (authPriv) read-only monitoring
   cisco.ios.ios_config:
     lines:
-      - "snmp-server group {{ snmp.group }} v3 priv"
+      - "snmp-server group {{ snmp.group }} v3 priv{{ snmp_group_suffix }}"
       - "snmp-server location {{ snmp.location_prefix }}-{{ site_name }}"
       - "snmp-server contact {{ snmp.contact }}"
   notify: save config
@@ -108,7 +105,7 @@
 - name: Create SNMPv3 user (only if missing - users are not shown in running-config)
   cisco.ios.ios_config:
     lines:
-      - "snmp-server user {{ snmp.user }} {{ snmp.group }} v3 auth sha {{ vault_snmp_auth }} priv aes 128 {{ vault_snmp_priv }}"
+      - "snmp-server user {{ snmp.user }} {{ snmp.group }} v3 auth sha {{ vault_snmp_auth }} priv {{ snmp_priv_proto }} {{ vault_snmp_priv }}"
   when: snmp.user not in snmp_users.stdout[0]
   no_log: true
   notify: save config

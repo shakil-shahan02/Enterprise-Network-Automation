@@ -2,3 +2,6 @@
 device_role: switch
 logging_source: Vlan99
 unused_ports_shutdown: true
+archive_notify: notify syslog                         # IOS 12.4 has no 'contenttype'
+snmp_priv_proto: des                                  # c2691 12.4 image offers DES only
+snmp_group_suffix: " match exact"                # how IOS 12.4 displays the v3 group

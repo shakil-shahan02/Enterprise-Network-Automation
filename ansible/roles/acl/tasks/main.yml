@@ -1,9 +1,15 @@
 ---
 # Security ACLs are data-driven: each site group defines 'acls' (name, remark, ordered ACEs).
-- name: Apply extended ACLs from site data
+# The YAML is authoritative: if the device ACL differs in any way (order, extra/missing ACE,
+# remark) the whole ACL block is rebuilt, so the device always matches the reviewed Git version.
+- name: Apply extended ACLs from site data (replace block when different)
   cisco.ios.ios_config:
     parents: "ip access-list extended {{ item.name }}"
-    lines: "{{ ['remark ' ~ item.remark] + item.aces }}"
+    # IOS displays 'deny ip ...' as 'deny   ip ...' - normalise so the comparison is exact
+    lines: "{{ ['remark ' ~ item.remark] + (item.aces | map('regex_replace', '^deny ', 'deny   ') | list) }}"
+    match: exact
+    replace: block
+    before: "no ip access-list extended {{ item.name }}"
   loop: "{{ acls | default([]) }}"
   loop_control: {label: "{{ item.name }} ({{ item.aces | length }} ACEs)"}
   notify: save config
