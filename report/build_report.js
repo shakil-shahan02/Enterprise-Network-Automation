@@ -10,7 +10,7 @@ const {
 } = require("docx");
 
 const ROOT = path.resolve(__dirname, "..");
-const SHOTS = path.join(ROOT, "screenshots");
+const SHOTS = fs.existsSync(path.join(__dirname, "img")) ? path.join(__dirname, "img") : path.join(ROOT, "screenshots");
 const CONTENT_W = 9026; // A4 with 1" margins, DXA
 const FONT = "Calibri";
 
@@ -68,7 +68,7 @@ function figure(file, caption, widthIn = 6.25) {
   const dim = sizeOf(fs.readFileSync(full));
   const w = Math.round(widthIn * 96), h = Math.round(w * dim.height / dim.width);
   figNo += 1;
-  figures.push([`Figure ${figNo}`, caption, path.relative(ROOT, full).replace(/\\/g, "/")]);
+  figures.push([`Figure ${figNo}`, caption, path.relative(ROOT, full).replace(/\\/g, "/").replace(/^report\/img\//, "screenshots/")]);
   return [
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 120, after: 40 }, keepNext: true,
       children: [new ImageRun({ type: "png", data: fs.readFileSync(full), transformation: { width: w, height: h },
