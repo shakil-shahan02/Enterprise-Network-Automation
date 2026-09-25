@@ -96,7 +96,7 @@ module.exports = { P, B, I, C, H1, H2, H3, bullet, numbered, table, tableCaption
   figures, CONTENT_W, ROOT, SHOTS, FONT, Paragraph, TextRun, AlignmentType, PageBreak };
 
 if (require.main === module) {
-  const sections = require("./report_content.js");
+  const sections = require(process.env.REPORT_CONTENT || "./report_content.js");
   const children = sections.build();
   const doc = new Document({
     creator: "ENT-HYBRID-NET consulting team",
@@ -130,6 +130,6 @@ if (require.main === module) {
       children,
     }],
   });
-  const out = path.join(__dirname, "ENT-HYBRID-NET_Technical_Report.docx");
+  const out = process.env.REPORT_OUT || path.join(__dirname, "ENT-HYBRID-NET_Technical_Report.docx");
   Packer.toBuffer(doc).then(buf => { fs.writeFileSync(out, buf); console.log("wrote", out, figures.length, "figures"); });
 }
