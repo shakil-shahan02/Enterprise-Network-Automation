@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#232f3e"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="900" fill="#ffffff"/>
+  <text x="40" y="45" font-size="26" font-weight="700" fill="#232f3e">ENT-HYBRID-NET – AWS Architecture (Terraform, ap-southeast-2)</text>
+  <text x="40" y="72" font-size="15" fill="#545b64">VPC 172.20.0.0/16 · 2 AZs · 2 public + 2 private subnets · IGW · route tables · security groups · bastion + private EC2 · SSH key pair</text>
+
+  <!-- Internet / admin -->
+  <rect x="560" y="95" width="280" height="54" rx="27" fill="#f2f3f3" stroke="#545b64" stroke-width="2"/>
+  <text x="700" y="128" font-size="17" text-anchor="middle" font-weight="600" fill="#232f3e">Internet</text>
+  <rect x="1080" y="95" width="280" height="70" rx="8" fill="#fff" stroke="#545b64" stroke-width="2"/>
+  <text x="1220" y="124" font-size="16" text-anchor="middle" font-weight="600">Network admin</text>
+  <text x="1220" y="146" font-size="13" text-anchor="middle" fill="#545b64">admin_cidr (e.g. x.x.x.x/32)</text>
+
+  <!-- Region -->
+  <rect x="30" y="180" width="1340" height="690" fill="none" stroke="#147eba" stroke-width="2" stroke-dasharray="8 5"/>
+  <text x="48" y="205" font-size="15" font-weight="700" fill="#147eba">AWS Region: ap-southeast-2 (Sydney)</text>
+
+  <!-- VPC -->
+  <rect x="60" y="225" width="1280" height="620" fill="#f7fbf2" stroke="#7aa116" stroke-width="3"/>
+  <text x="78" y="252" font-size="16" font-weight="700" fill="#4d6a0e">VPC ent-hybrid-net-lab-vpc  172.20.0.0/16  (DNS hostnames enabled)</text>
+
+  <!-- IGW -->
+  <rect x="610" y="205" width="180" height="44" rx="6" fill="#8c4fff" stroke="#5a2ea6" stroke-width="2"/>
+  <text x="700" y="233" font-size="15" text-anchor="middle" fill="#fff" font-weight="700">Internet Gateway</text>
+  <line x1="700" y1="149" x2="700" y2="203" stroke="#232f3e" stroke-width="2.5" marker-end="url(#arr)" marker-start="url(#arr)"/>
+
+  <!-- AZ columns -->
+  <rect x="90" y="275" width="590" height="545" fill="none" stroke="#879196" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="105" y="298" font-size="14" font-weight="700" fill="#545b64">Availability Zone A (ap-southeast-2a)</text>
+  <rect x="720" y="275" width="590" height="545" fill="none" stroke="#879196" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="735" y="298" font-size="14" font-weight="700" fill="#545b64">Availability Zone B (ap-southeast-2b)</text>
+
+  <!-- Public subnets -->
+  <rect x="110" y="315" width="550" height="200" fill="#e9f3e6" stroke="#248814" stroke-width="2"/>
+  <text x="125" y="340" font-size="15" font-weight="700" fill="#1d6b10">Public subnet A · 172.20.1.0/24</text>
+  <rect x="740" y="315" width="550" height="200" fill="#e9f3e6" stroke="#248814" stroke-width="2"/>
+  <text x="755" y="340" font-size="15" font-weight="700" fill="#1d6b10">Public subnet B · 172.20.2.0/24</text>
+  <text x="755" y="365" font-size="13" fill="#545b64">Reserved for HA bastion / load balancer / NAT GW (optional)</text>
+
+  <!-- Private subnets -->
+  <rect x="110" y="590" width="550" height="210" fill="#e6f0f8" stroke="#147eba" stroke-width="2"/>
+  <text x="125" y="615" font-size="15" font-weight="700" fill="#0f5c8a">Private subnet A · 172.20.11.0/24</text>
+  <rect x="740" y="590" width="550" height="210" fill="#e6f0f8" stroke="#147eba" stroke-width="2"/>
+  <text x="755" y="615" font-size="15" font-weight="700" fill="#0f5c8a">Private subnet B · 172.20.12.0/24</text>
+  <text x="755" y="640" font-size="13" fill="#545b64">Reserved for application scale-out / database tier</text>
+
+  <!-- Bastion SG + instance -->
+  <rect x="140" y="370" width="300" height="125" rx="6" fill="none" stroke="#dd344c" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="150" y="390" font-size="12" fill="#dd344c" font-weight="700">SG bastion-sg: 22/tcp from admin_cidr only</text>
+  <rect x="170" y="405" width="240" height="75" rx="6" fill="#ed7100"/>
+  <text x="290" y="435" font-size="16" text-anchor="middle" fill="#fff" font-weight="700">Bastion host (EC2)</text>
+  <text x="290" y="458" font-size="12" text-anchor="middle" fill="#fff">AL2023 · t3.micro · public IP · IMDSv2</text>
+
+  <!-- App SG + instance -->
+  <rect x="140" y="640" width="300" height="140" rx="6" fill="none" stroke="#dd344c" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="150" y="660" font-size="12" fill="#dd344c" font-weight="700">SG app-sg: 22 from bastion-sg · 80/ICMP from VPC</text>
+  <rect x="170" y="680" width="240" height="80" rx="6" fill="#ed7100"/>
+  <text x="290" y="712" font-size="16" text-anchor="middle" fill="#fff" font-weight="700">App server (EC2 Linux)</text>
+  <text x="290" y="735" font-size="12" text-anchor="middle" fill="#fff">AL2023 · t3.micro · no public IP · encrypted gp3</text>
+
+  <!-- Route tables -->
+  <rect x="470" y="400" width="175" height="90" rx="6" fill="#fff" stroke="#8c4fff" stroke-width="2"/>
+  <text x="557" y="422" font-size="13" text-anchor="middle" font-weight="700" fill="#5a2ea6">public-rt</text>
+  <text x="557" y="444" font-size="12" text-anchor="middle">172.20.0.0/16 → local</text>
+  <text x="557" y="464" font-size="12" text-anchor="middle">0.0.0.0/0 → IGW</text>
+  <text x="557" y="482" font-size="11" text-anchor="middle" fill="#545b64">(assoc. public A + B)</text>
+  <rect x="470" y="675" width="175" height="90" rx="6" fill="#fff" stroke="#8c4fff" stroke-width="2"/>
+  <text x="557" y="697" font-size="13" text-anchor="middle" font-weight="700" fill="#5a2ea6">private-rt</text>
+  <text x="557" y="719" font-size="12" text-anchor="middle">172.20.0.0/16 → local</text>
+  <text x="557" y="739" font-size="11" text-anchor="middle" fill="#545b64">0.0.0.0/0 → NAT GW (optional)</text>
+  <text x="557" y="757" font-size="11" text-anchor="middle" fill="#545b64">(assoc. private A + B)</text>
+
+  <!-- Key pair -->
+  <rect x="780" y="400" width="270" height="90" rx="6" fill="#fff" stroke="#232f3e" stroke-width="2"/>
+  <text x="915" y="425" font-size="14" text-anchor="middle" font-weight="700">SSH key pair (ED25519)</text>
+  <text x="915" y="447" font-size="12" text-anchor="middle">tls_private_key → aws_key_pair</text>
+  <text x="915" y="467" font-size="12" text-anchor="middle">private key → keys/*.pem (git-ignored)</text>
+
+  <!-- flows -->
+  <path d="M1300,165 L1300,552 L455,552 L455,442 L414,442" fill="none" stroke="#dd344c" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="800" y="545" font-size="13" fill="#dd344c" font-weight="700">① SSH (22) from admin_cidr to bastion public IP</text>
+  <line x1="290" y1="480" x2="290" y2="678" stroke="#dd344c" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="300" y="560" font-size="13" fill="#dd344c" font-weight="700">② SSH ProxyJump to 172.20.11.x</text>
+  <line x1="700" y1="249" x2="560" y2="398" stroke="#8c4fff" stroke-width="2" stroke-dasharray="4 3"/>
+
+  <text x="60" y="885" font-size="12" fill="#545b64">All resources tagged Project=ent-hybrid-net, Environment=lab, ManagedBy=Terraform. NAT gateway controlled by enable_nat_gateway (default false, free-tier friendly).</text>
+</svg>
