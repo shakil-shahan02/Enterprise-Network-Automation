@@ -28,7 +28,7 @@ exports.build = () => {
     ["Group", "[Group name / number]"],
     ["Members", "[Student name – ID]\n[Student name – ID]\n[Student name – ID]"],
     ["Lecturer / Tutor", "[Name]"],
-    ["Git repository", "[GitHub repository URL]"],
+    ["Git repository", "https://github.com/shakil-shahan02/Enterprise-Network-Automation (private)"],
     ["Submission date", "[dd/mm/yyyy]"],
   ], [2600, 6426], { size: 21 }));
   c.push(new Paragraph({ children: [new PageBreak()] }));
@@ -366,7 +366,7 @@ exports.build = () => {
     ["Configuration files", "configs/*.cfg (Day-0) and ansible/backups/latest/*.cfg (running configs)"],
     ["Ansible project", "ansible/"],
     ["Terraform project", "terraform/"],
-    ["Git repository link", "[GitHub URL]"],
+    ["Git repository link", "https://github.com/shakil-shahan02/Enterprise-Network-Automation (private)"],
     ["Evidence screenshots", "screenshots/*.png (listed below)"],
   ], [3000, 6026], { size: 18 }));
   c.push(tableCaption("Table 10: Submission contents"));
