@@ -6,6 +6,7 @@ and for capturing verification output.
   python console.py push  <host:port> <config-file>
   python console.py run   <host:port> "show ip route" ["show ip ospf neighbor" ...]
 """
+import os
 import re
 import socket
 import sys
@@ -139,6 +140,11 @@ def shell(target, commands, timeout=90):
     """Run commands on a Linux container console (busybox/bash)."""
     c = Console(target, prompt=SHELL_PROMPT)
     c.wake(5)
+    title = os.environ.get("EVIDENCE_TITLE")
+    if title:
+        sys.stdout.write("\x1b[2J\x1b[3J\x1b[H")
+        print("=" * 110 + f"\n  {title}   [{target}]   {time.strftime('%Y-%m-%d %H:%M:%S')}\n" + "=" * 110)
+        c.cmd("")
     for command in commands:
         c.cmd(command, timeout=timeout)
     print()
@@ -147,6 +153,11 @@ def shell(target, commands, timeout=90):
 def run(target, commands):
     c = Console(target)
     c.enable()
+    title = os.environ.get("EVIDENCE_TITLE")
+    if title:  # evidence mode: clear the window and print a header before the real output
+        sys.stdout.write("\x1b[2J\x1b[3J\x1b[H")
+        print("=" * 110 + f"\n  {title}   [{target}]   {time.strftime('%Y-%m-%d %H:%M:%S')}\n" + "=" * 110)
+        c.cmd("")
     for command in commands:
         c.cmd(command, timeout=60)
     print()
