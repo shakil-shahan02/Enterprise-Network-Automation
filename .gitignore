@@ -27,3 +27,5 @@ scripts/*.local.yml
 # GNS3 portable export (107 MB, > GitHub 100 MB limit) - submitted separately
 gns3/*.gns3project
 report/img/
+presentation/.img/
+presentation/*.pdf
