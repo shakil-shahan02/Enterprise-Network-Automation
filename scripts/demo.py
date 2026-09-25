@@ -1,8 +1,9 @@
-"""Send one demo step to ANSIBLE-SRV (visible in the LIVE window) and wait for it to finish.
+﻿"""Send one demo step to ANSIBLE-SRV (visible in the LIVE window) and wait for it to finish.
 Survives GNS3 console disconnects: reconnects and keeps waiting for the shell prompt.
 
   python demo.py "<title>" "<shell command>" [timeout]
 """
+import re
 import sys
 import time
 
@@ -22,7 +23,7 @@ c = connect()
 c.wake(3)
 c.cmd("cd /root/ansible && source venv/bin/activate && export ANSIBLE_DEPRECATION_WARNINGS=False ANSIBLE_FORCE_COLOR=1 COLUMNS=150")
 c.cmd(f"echo '###CLEAR###'; echo; echo '>>> {title}'; echo")
-c.s.sendall(cmd.encode() + b"; echo __DEMO_DONE__\r")
+c.s.sendall(cmd.encode() + b"; echo === STEP COMPLETE ===\r")
 end, buf = time.time() + timeout, b""
 while time.time() < end:
     try:
@@ -32,7 +33,7 @@ while time.time() < end:
         c = connect()
         c.s.sendall(b"\r")  # harmless empty line; lets us see the prompt again once finished
         continue
-    if buf.count(b"__DEMO_DONE__") >= 2 or (b"__DEMO_DONE__\n" in buf.replace(b"\r", b"")):
+    if re.search(rb"(^|\n)=== STEP COMPLETE ===\s*\n", buf.replace(b"\r", b"")):
         break
     time.sleep(0.2)
 print(buf.decode(errors="ignore")[-3000:])

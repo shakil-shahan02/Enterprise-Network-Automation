@@ -1,4 +1,4 @@
-"""Sync the Ansible project between this repo and ANSIBLE-SRV (/root/ansible).
+﻿"""Sync the Ansible project between this repo and ANSIBLE-SRV (/root/ansible).
 
   python sync_ansible.py push   # repo ansible/ -> tar bundle -> container /root/ansible
   python sync_ansible.py pull   # container backups/ reports/ logs/ -> repo ansible/
@@ -57,7 +57,7 @@ def pull():
     api, pid, nid, target = ctx()
     sh(target, "cd /root/ansible && tar czf /etc/network/.ansible_out.tgz backups reports logs && echo PACK_OK")
     data = api.get(f"/projects/{pid}/nodes/{nid}/files/{OUT}", raw=True)
-    with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tar:
+    with tarfile.open(fileobj=io.BytesIO(data), mode="r:*") as tar:
         tar.extractall(SRC, filter="data")
         names = [m.name for m in tar.getmembers() if m.isfile()]
     sh(target, "rm -f /etc/network/.ansible_out.tgz")

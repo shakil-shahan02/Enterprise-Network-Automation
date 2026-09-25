@@ -1,0 +1,27 @@
+# aws_instance.app will be created
+# aws_instance.bastion will be created
+# aws_internet_gateway.igw will be created
+# aws_key_pair.admin will be created
+# aws_route_table.private will be created
+# aws_route_table.public will be created
+# (12 unchanged attributes hidden)
+# aws_route_table_association.private[0] will be created
+# aws_route_table_association.private[1] will be created
+# aws_route_table_association.public[0] will be created
+# aws_route_table_association.public[1] will be created
+# aws_security_group.app will be created
+# aws_security_group.bastion will be created
+# aws_subnet.private[0] will be created
+# aws_subnet.private[1] will be created
+# aws_subnet.public[0] will be created
+# aws_subnet.public[1] will be created
+# aws_vpc.main will be created
+# aws_vpc_security_group_egress_rule.app_all will be created
+# aws_vpc_security_group_egress_rule.bastion_all will be created
+# aws_vpc_security_group_ingress_rule.app_http_from_vpc will be created
+# aws_vpc_security_group_ingress_rule.app_icmp_from_vpc will be created
+# aws_vpc_security_group_ingress_rule.app_ssh_from_bastion will be created
+# aws_vpc_security_group_ingress_rule.bastion_ssh will be created
+# local_sensitive_file.private_key will be created
+# tls_private_key.ssh will be created
+Plan: 25 to add, 0 to change, 0 to destroy.
