@@ -7,6 +7,8 @@ mgmt_gateway: 10.20.99.1
 vlans:
   - {id: 40, name: SALES,      network: 10.20.40.0, gateway: 10.20.40.1, dhcp: true}
   - {id: 50, name: OPERATIONS, network: 10.20.50.0, gateway: 10.20.50.1, dhcp: true}
+  # Day-2 change CHG-0001: new Marketing department at the Branch Office
+  - {id: 45, name: MARKETING,  network: 10.20.45.0, gateway: 10.20.45.1, dhcp: true}
   - {id: 99, name: MGMT,       network: 10.20.99.0, gateway: 10.20.99.1, dhcp: false}
 
 acls: []
