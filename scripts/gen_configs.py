@@ -122,6 +122,7 @@ exit
  ip address {ip} 255.255.255.252
  ip ospf network point-to-point
  ip ospf cost {cost}
+ ip ospf dead-interval 120
  ip ospf message-digest-key 1 md5 __OSPF_KEY__
  duplex full
  speed 100
@@ -243,6 +244,7 @@ exit
  ip nat inside
  ip ospf network point-to-point
  ip ospf cost {cost}
+ ip ospf dead-interval 120
  ip ospf message-digest-key 1 md5 __OSPF_KEY__
  duplex full
  speed 100

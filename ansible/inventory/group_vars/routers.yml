@@ -4,3 +4,4 @@ logging_source: Loopback0
 ospf:
   process_id: 1
   reference_bandwidth: 1000
+  dead_interval: 120        # tolerant of Dynamips emulator pauses (hello stays 10 s)

@@ -14,14 +14,15 @@ import time
 
 IAC, DONT, DO, WONT, WILL, SB, SE = 255, 254, 253, 252, 251, 250, 240
 PROMPT = re.compile(rb"(^|\n)[\w\-.]+(\([\w\-.]+\))?[#>] ?$")
-SHELL_PROMPT = re.compile(rb"(^|\n)[\w\-./:~@]*[#$] ?$")
+SHELL_PROMPT = re.compile(rb"(^|\n)(\(+venv\) *\)? *)?[\w\-./:~@]*[#$] ?$")
 SLOW = ("crypto key generate", "write memory", "copy running", "ip ssh version")
 
 
 class Console:
-    def __init__(self, target, echo=True, prompt=None):
+    def __init__(self, target, echo=True, prompt=None, keep_ansi=False):
         host, port = target.rsplit(":", 1)
         self.prompt = prompt or PROMPT
+        self.keep_ansi = keep_ansi
         self.s = socket.create_connection((host, int(port)), timeout=10)
         self.s.settimeout(0.3)
         self.echo = echo
@@ -53,7 +54,8 @@ class Console:
                 continue
             out.append(b)
             i += 1
-        out = re.sub(rb"\x1b\[[0-9;?]*[a-zA-Z]", b"", bytes(out))  # drop ANSI escapes (busybox ESC[6n)
+        pat = rb"\x1b\[6n" if self.keep_ansi else rb"\x1b\[[0-9;?]*[a-zA-Z]"
+        out = re.sub(pat, b"", bytes(out))  # drop ANSI escapes (busybox ESC[6n)
         if self.echo and out:
             sys.stdout.write(out.decode(errors="ignore").replace("\r", ""))
             sys.stdout.flush()
@@ -107,7 +109,14 @@ class Console:
         self.read_until_prompt(5)
         out = self.cmd("")
         if out.rstrip().endswith(">"):
-            self.cmd("enable")
+            self.s.sendall(b"enable\r")
+            time.sleep(1)
+            resp = self._recv()
+            if b"Password" in resp:  # enable secret from the git-ignored secrets file
+                sec = os.path.join(os.path.dirname(os.path.abspath(__file__)), "secrets.local.json")
+                import json
+                self.s.sendall(json.load(open(sec))["ENABLE_SECRET"].encode() + b"\r")
+            self.read_until_prompt(10)
         self.cmd("terminal length 0")
         self.cmd("terminal width 200")
 

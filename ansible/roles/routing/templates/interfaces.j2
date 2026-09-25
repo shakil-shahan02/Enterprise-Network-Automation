@@ -24,4 +24,5 @@ interface {{ l.interface }}
  ip address {{ l.ip }} {{ l.mask }}
  ip ospf network point-to-point
  ip ospf cost {{ l.cost }}
+ ip ospf dead-interval {{ ospf.dead_interval }}
 {% endfor %}
