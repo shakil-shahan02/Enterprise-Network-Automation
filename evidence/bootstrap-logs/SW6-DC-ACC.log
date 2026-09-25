@@ -1,0 +1,187 @@
+vlan database
+Router(vlan)#vtp transparent
+Setting device to VTP TRANSPARENT mode.
+Router(vlan)#vlan 60 name SERVERS
+VLAN 60 added:
+    Name: SERVERS
+Router(vlan)#vlan 100 name NETOPS
+VLAN 100 added:
+    Name: NETOPS
+Router(vlan)#vlan 99 name MGMT
+VLAN 99 added:
+    Name: MGMT
+Router(vlan)#apply
+APPLY completed.
+Router(vlan)#exit
+APPLY completed.
+Exiting....
+Router#configure terminal
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#hostname SW6-DC-ACC
+SW6-DC-ACC(config)#service timestamps debug datetime msec localtime show-timezone
+SW6-DC-ACC(config)#service timestamps log datetime msec localtime show-timezone
+SW6-DC-ACC(config)#service password-encryption
+SW6-DC-ACC(config)#enable secret ********
+SW6-DC-ACC(config)#username netadmin privilege 15 secret ********
+SW6-DC-ACC(config)#ip domain-name corp.local
+SW6-DC-ACC(config)#ip name-server 10.0.0.3
+SW6-DC-ACC(config)#clock timezone AEST 10
+SW6-DC-ACC(config)#crypto key generate rsa general-keys modulus 2048
+The name for the keys will be: SW6-DC-ACC.corp.local
+
+% The key modulus size is 2048 bits
+% Generating 2048 bit RSA keys, keys will be non-exportable...
+*Mar  1 10:01:16.423 AEST: %SYS-6-CLOCKUPDATE: System clock has been updated from 00:01:16 UTC Fri Mar 1 2002 to 10:01:16 AEST Fri Mar 1 2002, configured from console by console.[OK]
+
+SW6-DC-ACC(config)#ip ssh version 2
+SW6-DC-ACC(config)#ip ssh time-out 60
+SW6-DC-ACC(config)#ip ssh authentication-retries 3
+SW6-DC-ACC(config)#ip access-list standard MGMT-ACCESS
+SW6-DC-ACC(config-std-nacl)# permit 10.30.100.0 0.0.0.255
+SW6-DC-ACC(config-std-nacl)# permit 10.10.10.0 0.0.0.255
+SW6-DC-ACC(config-std-nacl)# deny any log
+SW6-DC-ACC(config-std-nacl)#exit
+SW6-DC-ACC(config)#line con 0
+SW6-DC-ACC(config-line)# exec-timeout 0 0
+SW6-DC-ACC(config-line)#
+*Mar  1 10:01:31.395 AEST: %SSH-5-ENABLED: SSH 1.99 has been enabled
+*Mar  1 10:01:36.435 AEST: %SPANTREE-7-RECV_1Q_NON_TRUNK: Received 802.1Q BPDU on non trunk FastEthernet1/1 VLAN1.
+*Mar  1 10:01:36.435 AEST: %SPANTREE-7-BLOCK_PORT_TYPE: Blocking FastEthernet1/1 on VLAN1. Inconsistent port type.PVST+: restarted the forward delay timer for FastEthernet1/1
+
+*Mar  1 10:01:36.451 AEST: %SPANTREE-7-RECV_1Q_NON_TRUNK: Received 802.1Q BPDU on non trunk FastEthernet1/2 VLAN1.
+*Mar  1 10:01:36.451 AEST: %SPANTREE-7-BLOCK_PORT_TYPE: Blocking FastEthernet1/2 on VLAN1. Inconsistent port type.PVST+: restarted the forward delay timer for FastEthernet1/2
+ logging synchronous
+SW6-DC-ACC(config-line)#exit
+SW6-DC-ACC(config)#line vty 0 4
+SW6-DC-ACC(config-line)# access-class MGMT-ACCESS in
+SW6-DC-ACC(config-line)# exec-timeout 10 0
+SW6-DC-ACC(config-line)# login local
+SW6-DC-ACC(config-line)# transport input ssh
+SW6-DC-ACC(config-line)#exit
+SW6-DC-ACC(config)#ntp server 10.0.0.4
+SW6-DC-ACC(config)#logging buffered 16384 informational
+SW6-DC-ACC(config)#logging trap informational
+SW6-DC-ACC(config)#logging source-interface Vlan99
+SW6-DC-ACC(config)#logging host 10.30.100.10
+SW6-DC-ACC(config)#no ip routing
+SW6-DC-ACC(config)#ip default-gateway 10.30.99.1
+SW6-DC-ACC(config)#interface FastEthernet1/1
+SW6-DC-ACC(config-if)# description TRUNK to SW5-DC-DIST f1/1
+SW6-DC-ACC(config-if)# switchport mode trunk
+SW6-DC-ACC(config-if)# no shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/2
+SW6-DC-ACC(config-if)# description TRUNK to SW5-DC-DIST f1/2
+SW6-DC-ACC(config-if)# switchport mode trunk
+SW6-DC-ACC(config-if)# no shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/5
+SW6-DC-ACC(config-if)# description ACCESS SRV-WEB1 (VLAN 60)
+SW6-DC-ACC(config-if)# switchport mode access
+SW6-DC-ACC(config-if)# switchport access vlan 60
+
+*Mar  1 10:02:04.427 AEST: %DTP-5-TRUNKPORTON: Port Fa1/1-2 has become dot1q trunk
+*Mar  1 10:02:04.927 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan99, changed state to up
+*Mar  1 10:02:05.431 AEST: %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 10.30.100.10 started - CLI initiated
+SW6-DC-ACC(config-if)# spanning-tree portfast
+%Warning: portfast should only be enabled on ports connected to a single host.
+ Connecting hubs, concentrators, switches,  bridges, etc.to this interface
+ when portfast is enabled, can cause temporary spanning tree loops.
+ Use with CAUTION
+
+%Portfast has been configured on FastEthernet1/5 but will only
+ have effect when the interface is in a non-trunking mode.
+SW6-DC-ACC(config-if)# no shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/6
+SW6-DC-ACC(config-if)# description ACCESS ANSIBLE-SRV (VLAN 100)
+SW6-DC-ACC(config-if)# switchport mode access
+SW6-DC-ACC(config-if)# switchport access vlan 100
+SW6-DC-ACC(config-if)# spanning-tree portfast
+%Warning: portfast should only be enabled on ports connected to a single host.
+ Connecting hubs, concentrators, switches,  bridges, etc.to this interface
+ when portfast is enabled, can cause temporary spanning tree loops.
+ Use with CAUTION
+
+%Portfast has been configured on FastEthernet1/6 but will only
+ have effect when the interface is in a non-trunking mode.
+SW6-DC-ACC(config-if)# no shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/3
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/4
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/7
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/8
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/9
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/10
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/11
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/12
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/13
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/14
+SW6-DC-ACC(config-if)#
+*Mar  1 10:02:14.655 AEST: %LINK-5-CHANGED: Interface FastEthernet1/3, changed state to administratively down
+*Mar  1 10:02:15.291 AEST: %LINK-5-CHANGED: Interface FastEthernet1/4, changed state to administratively down description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface FastEthernet1/15
+SW6-DC-ACC(config-if)# description UNUSED
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface Vlan1
+SW6-DC-ACC(config-if)# no ip address
+SW6-DC-ACC(config-if)# shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#interface Vlan99
+SW6-DC-ACC(config-if)# description MGMT
+SW6-DC-ACC(config-if)# ip address 10.30.99.12 255.255.255.0
+SW6-DC-ACC(config-if)# no shutdown
+SW6-DC-ACC(config-if)#exit
+SW6-DC-ACC(config)#end
+SW6-DC-ACC#end
+Translating "end"...domain server (10.0.0.3)
+*Mar  1 10:02:16.015 AEST: %LINK-5-CHANGED: Interface FastEthernet1/7, changed state to administratively down
+*Mar  1 10:02:16.343 AEST: %LINK-5-CHANGED: Interface FastEthernet1/8, changed state to administratively down
+*Mar  1 10:02:16.591 AEST: %LINK-5-CHANGED: Interface FastEthernet1/9, changed state to administratively down
+*Mar  1 10:02:16.859 AEST: %LINK-5-CHANGED: Interface FastEthernet1/10, changed state to administratively down
+*Mar  1 10:02:17.035 AEST: %SYS-5-CONFIG_I: Configured from console by console
+*Mar  1 10:02:17.091 AEST: %LINK-5-CHANGED: Interface FastEthernet1/11, changed state to administratively down
+*Mar  1 10:02:17.347 AEST: %LINK-5-CHANGED: Interface FastEthernet1/12, changed state to administratively down
+*Mar  1 10:02:17.591 AEST: %LINK-5-CHANGED: Interface FastEthernet1/13, changed state to administratively down
+*Mar  1 10:02:18.135 AEST: %LINK-5-CHANGED: Interface FastEthernet1/14, changed state to administratively down
+*Mar  1 10:02:18.383 AEST: %LINK-5-CHANGED: Interface FastEthernet1/15, changed state to administratively down
+*Mar  1 10:02:18.615 AEST: %LINK-5-CHANGED: Interface Vlan1, changed state to administratively down
+*Mar  1 10:02:19.615 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan1, changed state to down
+*Mar  1 10:02:26.663 AEST: %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 10.30.100.10 started - reconnection
+ (10.0.0.3)
+Translating "end"...domain server (10.0.0.3)
+% Unknown command or computer name, or unable to find computer address
+SW6-DC-ACC#write memory
+Building configuration...
+[OK]
+SW6-DC-ACC#

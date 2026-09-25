@@ -1,0 +1,193 @@
+vlan database
+Router(vlan)#vtp transparent
+Setting device to VTP TRANSPARENT mode.
+Router(vlan)#vlan 10 name IT
+VLAN 10 added:
+    Name: IT
+Router(vlan)#vlan 20 name FINANCE
+VLAN 20 added:
+    Name: FINANCE
+Router(vlan)#vlan 30 name GUEST
+VLAN 30 added:
+    Name: GUEST
+Router(vlan)#vlan 99 name MGMT
+VLAN 99 added:
+    Name: MGMT
+Router(vlan)#apply
+APPLY completed.
+Router(vlan)#exit
+APPLY completed.
+Exiting....
+Router#configure terminal
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#hostname SW2-HQ-ACC
+SW2-HQ-ACC(config)#service timestamps debug datetime msec localtime show-timezone
+SW2-HQ-ACC(config)#service timestamps log datetime msec localtime show-timezone
+SW2-HQ-ACC(config)#service password-encryption
+SW2-HQ-ACC(config)#enable secret ********
+SW2-HQ-ACC(config)#username netadmin privilege 15 secret ********
+SW2-HQ-ACC(config)#ip domain-name corp.local
+SW2-HQ-ACC(config)#ip name-server 10.0.0.3
+SW2-HQ-ACC(config)#clock timezone AEST 10
+SW2-HQ-ACC(config)#crypto key generate rsa general-keys modulus 2048
+The name for the keys will be: SW2-HQ-ACC.corp.local
+
+% The key modulus size is 2048 bits
+% Generating 2048 bit RSA keys, keys will be non-exportable...
+*Mar  1 10:01:21.111 AEST: %SYS-6-CLOCKUPDATE: System clock has been updated from 00:01:21 UTC Fri Mar 1 2002 to 10:01:21 AEST Fri Mar 1 2002, configured from console by console.[OK]
+
+SW2-HQ-ACC(config)#ip ssh version 2
+SW2-HQ-ACC(config)#ip ssh time-out 60
+SW2-HQ-ACC(config)#ip ssh authentication-retries 3
+SW2-HQ-ACC(config)#ip access-list standard MGMT-ACCESS
+SW2-HQ-ACC(config-std-nacl)# permit 10.30.100.0 0.0.0.255
+SW2-HQ-ACC(config-std-nacl)# permit 10.10.10.0 0.0.0.255
+SW2-HQ-ACC(config-std-nacl)#
+*Mar  1 10:01:26.963 AEST: %SSH-5-ENABLED: SSH 1.99 has been enabled deny any log
+SW2-HQ-ACC(config-std-nacl)#exit
+SW2-HQ-ACC(config)#line con 0
+SW2-HQ-ACC(config-line)# exec-timeout 0 0
+SW2-HQ-ACC(config-line)# logging synchronous
+SW2-HQ-ACC(config-line)#exit
+SW2-HQ-ACC(config)#line vty 0 4
+SW2-HQ-ACC(config-line)# access-class MGMT-ACCESS in
+SW2-HQ-ACC(config-line)# exec-timeout 10 0
+SW2-HQ-ACC(config-line)# login local
+SW2-HQ-ACC(config-line)# transport input ssh
+SW2-HQ-ACC(config-line)#exit
+SW2-HQ-ACC(config)#ntp server 10.0.0.4
+SW2-HQ-ACC(config)#logging buffered 16384 informational
+SW2-HQ-ACC(config)#logging trap informational
+SW2-HQ-ACC(config)#logging source-interface Vlan99
+SW2-HQ-ACC(config)#logging host 10.30.100.10
+SW2-HQ-ACC(config)#no ip routing
+SW2-HQ-ACC(config)#ip default-gateway 10.10.99.1
+SW2-HQ-ACC(config)#interface FastEthernet1/1
+SW2-HQ-ACC(config-if)# description TRUNK to SW1-HQ-DIST f1/1
+SW2-HQ-ACC(config-if)# switchport mode trunk
+SW2-HQ-ACC(config-if)# no shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/2
+SW2-HQ-ACC(config-if)# description TRUNK to SW1-HQ-DIST f1/2
+SW2-HQ-ACC(config-if)# switchport mode trunk
+SW2-HQ-ACC(config-if)# no shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/5
+SW2-HQ-ACC(config-if)# description ACCESS PC-IT1 (VLAN 10)
+SW2-HQ-ACC(config-if)# switchport mode access
+SW2-HQ-ACC(config-if)# switchport access vlan 10
+
+*Mar  1 10:01:30.819 AEST: %DTP-5-TRUNKPORTON: Port Fa1/1-2 has become dot1q trunk
+*Mar  1 10:01:31.319 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan99, changed state to up
+*Mar  1 10:01:31.819 AEST: %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 10.30.100.10 started - CLI initiated
+SW2-HQ-ACC(config-if)# spanning-tree portfast
+%Warning: portfast should only be enabled on ports connected to a single host.
+ Connecting hubs, concentrators, switches,  bridges, etc.to this interface
+ when portfast is enabled, can cause temporary spanning tree loops.
+ Use with CAUTION
+
+%Portfast has been configured on FastEthernet1/5 but will only
+ have effect when the interface is in a non-trunking mode.
+SW2-HQ-ACC(config-if)# no shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/6
+SW2-HQ-ACC(config-if)# description ACCESS PC-FIN1 (VLAN 20)
+SW2-HQ-ACC(config-if)# switchport mode access
+SW2-HQ-ACC(config-if)# switchport access vlan 20
+SW2-HQ-ACC(config-if)# spanning-tree portfast
+%Warning: portfast should only be enabled on ports connected to a single host.
+ Connecting hubs, concentrators, switches,  bridges, etc.to this interface
+ when portfast is enabled, can cause temporary spanning tree loops.
+ Use with CAUTION
+
+%Portfast has been configured on FastEthernet1/6 but will only
+ have effect when the interface is in a non-trunking mode.
+SW2-HQ-ACC(config-if)# no shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/7
+SW2-HQ-ACC(config-if)# description ACCESS PC-GUEST1 (VLAN 30)
+SW2-HQ-ACC(config-if)# switchport mode access
+SW2-HQ-ACC(config-if)# switchport access vlan 30
+SW2-HQ-ACC(config-if)# spanning-tree portfast
+%Warning: portfast should only be enabled on ports connected to a single host.
+ Connecting hubs, concentrators, switches,  bridges, etc.to this interface
+ when portfast is enabled, can cause temporary spanning tree loops.
+ Use with CAUTION
+
+%Portfast has been configured on FastEthernet1/7 but will only
+ have effect when the interface is in a non-trunking mode.
+SW2-HQ-ACC(config-if)# no shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/3
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/4
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/8
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/9
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/10
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/11
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/12
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/13
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/14
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface FastEthernet1/15
+SW2-HQ-ACC(config-if)# description UNUSED
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface Vlan1
+SW2-HQ-ACC(config-if)# no ip address
+SW2-HQ-ACC(config-if)# shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#interface Vlan99
+SW2-HQ-ACC(config-if)# description MGMT
+SW2-HQ-ACC(config-if)# ip address 10.10.99.12 255.255.255.0
+SW2-HQ-ACC(config-if)# no shutdown
+SW2-HQ-ACC(config-if)#exit
+SW2-HQ-ACC(config)#end
+SW2-HQ-ACC#end
+Translating "end"...domain server (10.0.0.3)
+*Mar  1 10:01:42.807 AEST: %LINK-5-CHANGED: Interface FastEthernet1/3, changed state to administratively down
+*Mar  1 10:01:43.043 AEST: %LINK-5-CHANGED: Interface FastEthernet1/4, changed state to administratively down
+*Mar  1 10:01:43.287 AEST: %LINK-5-CHANGED: Interface FastEthernet1/8, changed state to administratively down
+*Mar  1 10:01:43.539 AEST: %LINK-5-CHANGED: Interface FastEthernet1/9, changed state to administratively down
+*Mar  1 10:01:43.683 AEST: %SYS-5-CONFIG_I: Configured from console by console
+*Mar  1 10:01:43.787 AEST: %LINK-5-CHANGED: Interface FastEthernet1/10, changed state to administratively down
+*Mar  1 10:01:44.039 AEST: %LINK-5-CHANGED: Interface FastEthernet1/11, changed state to administratively down
+*Mar  1 10:01:44.355 AEST: %LINK-5-CHANGED: Interface FastEthernet1/12, changed state to administratively down
+*Mar  1 10:01:44.571 AEST: %LINK-5-CHANGED: Interface FastEthernet1/13, changed state to administratively down
+*Mar  1 10:01:44.787 AEST: %LINK-5-CHANGED: Interface FastEthernet1/14, changed state to administratively down
+*Mar  1 10:01:45.031 AEST: %LINK-5-CHANGED: Interface FastEthernet1/15, changed state to administratively down
+*Mar  1 10:01:45.267 AEST: %LINK-5-CHANGED: Interface Vlan1, changed state to administratively down
+*Mar  1 10:01:46.267 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan1, changed state to down
+*Mar  1 10:01:48.807 AEST: %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 10.30.100.10 started - reconnection
+ (10.0.0.3)
+Translating "end"...domain server (10.0.0.3)
+% Unknown command or computer name, or unable to find computer address
+SW2-HQ-ACC#write memory
+Building configuration...
+[OK]
+SW2-HQ-ACC#

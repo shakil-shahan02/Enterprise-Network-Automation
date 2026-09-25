@@ -1,0 +1,142 @@
+configure terminal
+Enter configuration commands, one per line.  End with CNTL/Z.
+router(config)#hostname R4-CORE
+R4-CORE(config)#service timestamps debug datetime msec localtime show-timezone
+R4-CORE(config)#service timestamps log datetime msec localtime show-timezone
+R4-CORE(config)#service password-encryption
+R4-CORE(config)#enable secret ********
+R4-CORE(config)#username netadmin privilege 15 secret ********
+R4-CORE(config)#ip domain-name corp.local
+R4-CORE(config)#ip name-server 10.0.0.3
+R4-CORE(config)#clock timezone AEST 10
+R4-CORE(config)#crypto key generate rsa general-keys modulus 2048
+The name for the keys will be: R4-CORE.corp.local
+
+% The key modulus size is 2048 bits
+% Generating 2048 bit RSA keys, keys will be non-exportable...
+*Sep 26 00:18:42.915 AEST: %SYS-6-CLOCKUPDATE: System clock has been updated from 14:18:42 UTC Fri Sep 25 2026 to 00:18:42 AEST Sat Sep 26 2026, configured from console by console.
+*Sep 26 00:18:46.975 AEST: %SYS-3-CPUHOG: Task is running for (2024)msecs, more than (2000)msecs (4/4),process = crypto sw pk proc.
+-Traceback= 0x63DE9D60z 0x63E255B0z 0x63E25C40z 0x63E21A88z 0x63E21EACz 0x63E220E8z 0x63E23194z 0x6339B980z 0x6339B964z [OK]
+
+R4-CORE(config)#ip ssh version 2
+R4-CORE(config)#ip ssh time-out 60
+R4-CORE(config)#ip ssh authentication-retries 3
+R4-CORE(config)#ip access-list standard MGMT-ACCESS
+R4-CORE(config-std-nacl)# permit 10.30.100.0 0.0.0.255
+R4-CORE(config-std-nacl)# permit 10.10.10.0 0.0.0.255
+R4-CORE(config-std-nacl)# deny any log
+R4-CORE(config-std-nacl)#exit
+R4-CORE(config)#line con 0
+R4-CORE(config-line)# exec-timeout 0 0
+R4-CORE(config-line)# logging synchronous
+R4-CORE(config-line)#exit
+R4-CORE(config)#line vty 0 4
+R4-CORE(config-line)# access-class MGMT-ACCESS in
+R4-CORE(config-line)# exec-timeout 10 0
+R4-CORE(config-line)# login local
+R4-CORE(config-line)# transport input ssh
+R4-CORE(config-line)#exit
+R4-CORE(config)#ntp master 3
+R4-CORE(config)#ntp source Loopback0
+                                   ^
+% Invalid input detected at '^' marker.
+
+R4-CORE(config)#logging buffered 16384 informational
+R4-CORE(config)#logging trap informational
+R4-CORE(config)#logging source-interface Loopback0
+R4-CORE(config)#logging host 10.30.100.10
+R4-CORE(config)#interface Loopback0
+R4-CORE(config-if)# description ROUTER-ID / NTP-MASTER
+R4-CORE(config-if)# ip address 10.0.0.4 255.255.255.255
+R4-CORE(config-if)#exit
+R4-CORE(config)#interface FastEthernet0/0
+R4-CORE(config-if)# description INTERNET (GNS3 NAT cloud) - PAT outside
+R4-CORE(config-if)# ip address dhcp
+
+*Sep 26 00:19:01.679 AEST: %SSH-5-ENABLED: SSH 1.99 has been enabled
+*Sep 26 00:19:03.899 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface Loopback0, changed state to up
+*Sep 26 00:19:04.903 AEST: %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 10.30.100.10 port 514 started - CLI initiated
+R4-CORE(config-if)# ip nat outside
+
+*Sep 26 00:19:10.395 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface NVI0, changed state to up
+R4-CORE(config-if)# no shutdown
+R4-CORE(config-if)#exit
+R4-CORE(config)#interface FastEthernet1/0
+R4-CORE(config-if)# description P2P to R1-HQ f1/0
+R4-CORE(config-if)# ip address 10.255.0.1 255.255.255.252
+R4-CORE(config-if)# ip nat inside
+R4-CORE(config-if)# ip ospf network point-to-point
+R4-CORE(config-if)# ip ospf cost 10
+R4-CORE(config-if)# ip ospf message-digest-key 1 md5 ********
+R4-CORE(config-if)# duplex full
+R4-CORE(config-if)# speed 100
+R4-CORE(config-if)# no shutdown
+R4-CORE(config-if)#exit
+R4-CORE(config)#interface FastEthernet1/1
+R4-CORE(config-if)# description P2P to R2-BR f1/0
+R4-CORE(config-if)# ip address 10.255.0.5 255.255.255.252
+R4-CORE(config-if)# ip nat inside
+R4-CORE(config-if)# ip ospf network point-to-point
+R4-CORE(config-if)# ip ospf cost 10
+R4-CORE(config-if)# ip ospf message-digest-key 1 md5 ********
+R4-CORE(config-if)# duplex full
+R4-CORE(config-if)# speed 100
+R4-CORE(config-if)# no shutdown
+R4-CORE(config-if)#exit
+R4-CORE(config)#interface FastEthernet2/0
+R4-CORE(config-if)# description P2P to R3-DC f1/0
+R4-CORE(config-if)# ip address 10.255.0.9 255.255.255.252
+R4-CORE(config-if)# ip nat inside
+R4-CORE(config-if)# ip ospf network point-to-point
+R4-CORE(config-if)# ip ospf cost 10
+R4-CORE(config-if)# ip ospf message-digest-key 1 md5 ********
+R4-CORE(config-if)# duplex full
+R4-CORE(config-if)# speed 100
+R4-CORE(config-if)# no shutdown
+R4-CORE(config-if)#exit
+R4-CORE(config)#ip access-list standard NAT-INSIDE
+R4-CORE(config-std-nacl)# permit 10.0.0.0 0.255.255.255
+R4-CORE(config-std-nacl)#exit
+R4-CORE(config)#ip nat inside source list NAT-INSIDE interface FastEthernet0/0 overload
+ 
+R4-CORE(config)#router ospf 1
+R4-CORE(config-router)# router-id 10.0.0.4
+R4-CORE(config-router)# log-adjacency-changes
+R4-CORE(config-router)# auto-cost reference-bandw
+%Error opening tftp://192.168.42.1/router-confg (Timed out)idth 1000
+% OSPF: Reference bandwidth is changed. 
+        Please ensure reference bandwidth is consistent across all routers.
+R4-CORE(config-router)# area 0 authentication message-digest
+R4-CORE(config-router)# passive-interface default
+R4-CORE(config-router)# no passive-interface FastEthernet1/0
+R4-CORE(config-router)# no passive-interface FastEthernet1/1
+R4-CORE(config-router)# no passive-interface FastEthernet2/0
+R4-CORE(config-router)# network 10.0.0.4 0.0.0.0 area 0
+R4-CORE(config-router)# network 10.255.0.0 0.0.0.3 area 0
+R4-CORE(config-router)#
+*Sep 26 00:19:23.163 AEST: %DHCP-6-ADDRESS_ASSIGN: Interface FastEthernet0/0 assigned DHCP address 192.168.42.241, mask 255.255.255.0, hostname R4-CORE
+ 
+R4-CORE(config-router)# network 10.255.0.4 0.0.0.3 area 0
+R4-CORE(config-router)# network 10.255.0.8 0.0.0.3 area 0
+R4-CORE(config-router)# default-information originate always
+R4-CORE(config-router)#exit
+R4-CORE(config)#end
+R4-CORE#end
+Translating "end"...domain server (10.0.0.3)
+*Sep 26 00:19:23.195 AEST: %LINK-3-UPDOWN: Interface FastEthernet1/0, changed state to up
+*Sep 26 00:19:23.683 AEST: %SYS-5-CONFIG_I: Configured from console by console
+*Sep 26 00:19:23.875 AEST: %LINK-3-UPDOWN: Interface FastEthernet1/1, changed state to up
+*Sep 26 00:19:24.195 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0, changed state to up
+*Sep 26 00:19:24.623 AEST: %LINK-3-UPDOWN: Interface FastEthernet2/0, changed state to up
+*Sep 26 00:19:24.875 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/1, changed state to up
+*Sep 26 00:19:25.623 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet2/0, changed state to up
+*Sep 26 00:19:27.727 AEST: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.1 on FastEthernet1/0 from LOADING to FULL, Loading Done
+*Sep 26 00:19:29.655 AEST: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.2 on FastEthernet1/1 from LOADING to FULL, Loading Done (192.168.42.1)
+*Sep 26 00:19:32.459 AEST: %OSPF-5-ADJCHG: Process 1, Nbr 10.0.0.3 on FastEthernet2/0 from LOADING to FULL, Loading Done
+ (10.0.0.3) (192.168.42.1)
+Translating "end"...domain server (10.0.0.3)
+%Error opening tftp://192.168.42.1/R4-CORE-confg (Timed out) (192.168.42.1)
+
+% Bad IP address or host name
+% Unknown command or computer name, or unable to find computer address
+R4-CORE#

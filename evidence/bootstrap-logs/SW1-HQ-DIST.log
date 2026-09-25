@@ -1,0 +1,187 @@
+vlan database
+Router(vlan)#vtp transparent
+Setting device to VTP TRANSPARENT mode.
+Router(vlan)#vlan 10 name IT
+VLAN 10 added:
+    Name: IT
+Router(vlan)#vlan 20 name FINANCE
+VLAN 20 added:
+    Name: FINANCE
+Router(vlan)#vlan 30 name GUEST
+VLAN 30 added:
+    Name: GUEST
+Router(vlan)#vlan 99 name MGMT
+VLAN 99 added:
+    Name: MGMT
+Router(vlan)#apply
+APPLY completed.
+Router(vlan)#exit
+APPLY completed.
+Exiting....
+Router#configure terminal
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#hostname SW1-HQ-DIST
+SW1-HQ-DIST(config)#service timestamps debug datetime msec localtime show-timezone
+SW1-HQ-DIST(config)#service timestamps log datetime msec localtime show-timezone
+SW1-HQ-DIST(config)#service password-encryption
+SW1-HQ-DIST(config)#enable secret ********
+SW1-HQ-DIST(config)#username netadmin privilege 15 secret ********
+SW1-HQ-DIST(config)#ip domain-name corp.local
+SW1-HQ-DIST(config)#ip name-server 10.0.0.3
+SW1-HQ-DIST(config)#clock timezone AEST 10
+SW1-HQ-DIST(config)#crypto key generate rsa general-keys modulus 2048
+The name for the keys will be: SW1-HQ-DIST.corp.local
+
+% The key modulus size is 2048 bits
+% Generating 2048 bit RSA keys, keys will be non-exportable...
+*Mar  1 10:02:30.447 AEST: %SYS-6-CLOCKUPDATE: System clock has been updated from 00:02:30 UTC Fri Mar 1 2002 to 10:02:30 AEST Fri Mar 1 2002, configured from console by console.
+*Mar  1 10:02:40.759 AEST: %SPANTREE-7-RECV_1Q_NON_TRUNK: Received 802.1Q BPDU on non trunk FastEthernet1/1 VLAN1.
+*Mar  1 10:02:40.759 AEST: %SPANTREE-7-BLOCK_PORT_TYPE: Blocking FastEthernet1/1 on VLAN1. Inconsistent port type.
+*Mar  1 10:02:42.183 AEST: %SPANTREE-7-RECV_1Q_NON_TRUNK: Received 802.1Q BPDU on non trunk FastEthernet1/2 VLAN1.
+*Mar  1 10:02:42.183 AEST: %SPANTREE-7-BLOCK_PORT_TYPE: Blocking FastEthernet1/2 on VLAN1. Inconsistent port type.[OK]
+
+SW1-HQ-DIST(config)#ip ssh version 2
+SW1-HQ-DIST(config)#ip ssh time-out 60
+SW1-HQ-DIST(config)#ip ssh authentication-retries 3
+SW1-HQ-DIST(config)#ip access-list standard MGMT-ACCESS
+SW1-HQ-DIST(config-std-nacl)# permit 10.30.100.0 0.0.0.255
+SW1-HQ-DIST(config-std-nacl)# permit 10.10.10.0 0.0.0.255
+SW1-HQ-DIST(config-std-nacl)# deny any log
+SW1-HQ-DIST(config-std-nacl)#exit
+SW1-HQ-DIST(config)#line con 0
+SW1-HQ-DIST(config-line)# exec-timeout 0 0
+SW1-HQ-DIST(config-line)# logging synchronous
+SW1-HQ-DIST(config-line)#exit
+SW1-HQ-DIST(config)#line vty 0 4
+SW1-HQ-DIST(config-line)# access-class MGMT-ACCESS in
+SW1-HQ-DIST(config-line)# exec-timeout 10 0
+SW1-HQ-DIST(config-line)# login local
+SW1-HQ-DIST(config-line)# transport input ssh
+SW1-HQ-DIST(config-line)#
+*Mar  1 10:02:50.419 AEST: %SSH-5-ENABLED: SSH 1.99 has been enabled
+SW1-HQ-DIST(config-line)#exit
+SW1-HQ-DIST(config)#ntp server 10.0.0.4
+SW1-HQ-DIST(config)#logging buffered 16384 informational
+SW1-HQ-DIST(config)#logging trap informational
+SW1-HQ-DIST(config)#logging source-interface Vlan99
+SW1-HQ-DIST(config)#logging host 10.30.100.10
+SW1-HQ-DIST(config)#no ip routing
+SW1-HQ-DIST(config)#ip default-gateway 10.10.99.1
+SW1-HQ-DIST(config)#spanning-tree vlan 1 priority 4096
+SW1-HQ-DIST(config)#spanning-tree vlan 10 priority 4096
+SW1-HQ-DIST(config)#spanning-tree vlan 20 priority 4096
+SW1-HQ-DIST(config)#spanning-tree vlan 30 priority 4096
+SW1-HQ-DIST(config)#spanning-tree vlan 99 priority 4096
+SW1-HQ-DIST(config)#interface FastEthernet1/0
+SW1-HQ-DIST(config-if)# description TRUNK to R1-HQ f0/0
+SW1-HQ-DIST(config-if)# switchport mode trunk
+SW1-HQ-DIST(config-if)# no shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/1
+SW1-HQ-DIST(config-if)# description TRUNK to SW2-HQ-ACC f1/1
+SW1-HQ-DIST(config-if)# switchport mode trunk
+SW1-HQ-DIST(config-if)# no shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/2
+SW1-HQ-DIST(config-if)# description TRUNK to SW2-HQ-ACC f1/2
+SW1-HQ-DIST(config-if)# switchport mode trunk
+SW1-HQ-DIST(config-if)# no shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/3
+SW1-HQ-DIST(config-if)#PVST+: restarted the forward delay timer for FastEthernet1/2
+
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/4
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/5
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/6
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#
+*Mar  1 10:02:54.591 AEST: %DTP-5-TRUNKPORTON: Port Fa1/0-1 has become dot1q trunk
+*Mar  1 10:02:55.095 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan99, changed state to up
+*Mar  1 10:02:55.255 AEST: %DTP-5-TRUNKPORTON: Port Fa1/2 has become dot1q trunk
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/7
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/8
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/9
+SW1-HQ-DIST(config-if)#
+*Mar  1 10:02:55.591 AEST: %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 10.30.100.10 started - CLI initiated
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/10
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/11
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/12
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/13
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/14
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface FastEthernet1/15
+SW1-HQ-DIST(config-if)# description UNUSED
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface Vlan1
+SW1-HQ-DIST(config-if)# no ip address
+SW1-HQ-DIST(config-if)# shutdown
+SW1-HQ-DIST(config-if)#
+*Mar  1 10:02:57.175 AEST: %LINK-5-CHANGED: Interface FastEthernet1/3, changed state to administratively down
+*Mar  1 10:02:57.411 AEST: %LINK-5-CHANGED: Interface FastEthernet1/4, changed state to administratively down
+*Mar  1 10:02:57.659 AEST: %LINK-5-CHANGED: Interface FastEthernet1/5, changed state to administratively down
+*Mar  1 10:02:57.911 AEST: %LINK-5-CHANGED: Interface FastEthernet1/6, changed state to administratively down
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#interface Vlan99
+SW1-HQ-DIST(config-if)# description MGMT
+SW1-HQ-DIST(config-if)# ip address 10.10.99.11 255.255.255.0
+
+*Mar  1 10:02:58.515 AEST: %LINK-5-CHANGED: Interface FastEthernet1/7, changed state to administratively down
+*Mar  1 10:02:58.763 AEST: %LINK-5-CHANGED: Interface FastEthernet1/8, changed state to administratively down
+*Mar  1 10:02:59.187 AEST: %LINK-5-CHANGED: Interface FastEthernet1/9, changed state to administratively down
+*Mar  1 10:02:59.423 AEST: %LINK-5-CHANGED: Interface FastEthernet1/10, changed state to administratively down
+SW1-HQ-DIST(config-if)# no shutdown
+SW1-HQ-DIST(config-if)#exit
+SW1-HQ-DIST(config)#end
+SW1-HQ-DIST#end
+Translating "end"...domain server (10.0.0.3)
+*Mar  1 10:02:59.675 AEST: %LINK-5-CHANGED: Interface FastEthernet1/11, changed state to administratively down
+*Mar  1 10:02:59.923 AEST: %LINK-5-CHANGED: Interface FastEthernet1/12, changed state to administratively down
+*Mar  1 10:03:00.167 AEST: %LINK-5-CHANGED: Interface FastEthernet1/13, changed state to administratively down
+*Mar  1 10:03:00.415 AEST: %LINK-5-CHANGED: Interface FastEthernet1/14, changed state to administratively down
+*Mar  1 10:03:00.655 AEST: %SYS-5-CONFIG_I: Configured from console by console
+*Mar  1 10:03:00.663 AEST: %LINK-5-CHANGED: Interface FastEthernet1/15, changed state to administratively down
+*Mar  1 10:03:00.915 AEST: %LINK-5-CHANGED: Interface Vlan1, changed state to administratively down
+*Mar  1 10:03:01.915 AEST: %LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan1, changed state to down
+*Mar  1 10:03:09.595 AEST: %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 10.30.100.10 started - reconnection
+ (10.0.0.3)
+Translating "end"...domain server (10.0.0.3)
+% Unknown command or computer name, or unable to find computer address
+SW1-HQ-DIST#write memory
+Building configuration...
+[OK]
+SW1-HQ-DIST#
