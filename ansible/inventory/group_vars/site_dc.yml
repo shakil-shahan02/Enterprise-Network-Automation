@@ -1,0 +1,39 @@
+---
+site_name: DC
+ospf_area: 30
+site_summary: {prefix: 10.30.0.0, mask: 255.255.0.0}
+mgmt_gateway: 10.30.99.1
+
+vlans:
+  - {id: 60,  name: SERVERS, network: 10.30.60.0,  gateway: 10.30.60.1,  dhcp: false, acl_out: SERVERS-PROTECT}
+  - {id: 100, name: NETOPS,  network: 10.30.100.0, gateway: 10.30.100.1, dhcp: false}
+  - {id: 99,  name: MGMT,    network: 10.30.99.0,  gateway: 10.30.99.1,  dhcp: false}
+
+# R3-DC is the internal DNS server for corp.local
+dns_records:
+  r1-hq: 10.0.0.1
+  r2-br: 10.0.0.2
+  r3-dc: 10.0.0.3
+  r4-core: 10.0.0.4
+  sw1-hq-dist: 10.10.99.11
+  sw2-hq-acc: 10.10.99.12
+  sw3-br-dist: 10.20.99.11
+  sw4-br-acc: 10.20.99.12
+  sw5-dc-dist: 10.30.99.11
+  sw6-dc-acc: 10.30.99.12
+  web: 10.30.60.10
+  ansible: 10.30.100.10
+  syslog: 10.30.100.10
+
+acls:
+  - name: SERVERS-PROTECT
+    remark: allow web services, ICMP and management to server VLAN
+    aces:
+      - permit tcp 10.0.0.0 0.255.255.255 host 10.30.60.10 eq www
+      - permit tcp 10.0.0.0 0.255.255.255 host 10.30.60.10 eq 443
+      - permit icmp 10.0.0.0 0.255.255.255 10.30.60.0 0.0.0.255
+      - permit icmp any 10.30.60.0 0.0.0.255 echo-reply
+      - permit tcp 10.30.100.0 0.0.0.255 10.30.60.0 0.0.0.255 eq 22
+      - deny ip 10.10.30.0 0.0.0.255 any log
+      - permit ip 10.30.0.0 0.0.255.255 any
+      - deny ip any any log

@@ -1,0 +1,8 @@
+---
+site_name: CORE
+ntp_master: true
+nat:
+  outside: FastEthernet0/0
+  inside: [FastEthernet1/0, FastEthernet1/1, FastEthernet2/0]
+  acl: NAT-INSIDE
+acls: []

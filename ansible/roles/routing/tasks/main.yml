@@ -1,0 +1,10 @@
+---
+- name: Render + apply interface configuration (sub-interfaces, P2P links)
+  cisco.ios.ios_config:
+    src: interfaces.j2
+  notify: save config
+
+- name: Render + apply OSPF configuration
+  cisco.ios.ios_config:
+    src: ospf.j2
+  notify: save config

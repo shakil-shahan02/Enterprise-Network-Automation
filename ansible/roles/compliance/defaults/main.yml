@@ -1,0 +1,16 @@
+---
+compliance_rules:
+  - {name: SSH version 2 only,              regex: '^ip ssh version 2'}
+  - {name: Telnet disabled on VTY,          regex: '^line vty 0 4(\n [^\n]*)*\n transport input ssh'}
+  - {name: VTY protected by MGMT-ACCESS,    regex: 'access-class MGMT-ACCESS in'}
+  - {name: Local AAA user,                  regex: '^username netadmin privilege 15 secret'}
+  - {name: Enable secret (not password),    regex: '^enable secret'}
+  - {name: Password encryption,             regex: '^service password-encryption'}
+  - {name: Login brute-force protection,    regex: '^login block-for'}
+  - {name: Legal banner,                    regex: '^banner motd'}
+  - {name: NTP configured,                  regex: '^ntp (server|master)'}
+  - {name: Remote syslog,                   regex: '^logging (host )?10\.30\.100\.10'}
+  - {name: Config-change archive logging,   regex: '^archive\n log config\n  logging enable'}
+  - {name: SNMPv3 priv group,               regex: '^snmp-server group \S+ v3 priv'}
+  - {name: No SNMPv1/v2c communities,       regex: '^snmp-server community', absent: true}
+  - {name: HTTP server disabled,            regex: '^ip http server', absent: true}

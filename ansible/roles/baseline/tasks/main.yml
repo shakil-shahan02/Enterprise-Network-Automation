@@ -1,0 +1,114 @@
+---
+# Enterprise baseline: security hardening + NTP + Syslog + DNS client + management-plane ACL.
+- name: Global security hardening and services
+  cisco.ios.ios_config:
+    lines:
+      - service password-encryption
+      - service tcp-keepalives-in
+      - service tcp-keepalives-out
+      - no service pad
+      - no ip http server
+      - no ip http secure-server
+      - no ip source-route
+      - ip ssh version 2
+      - ip ssh time-out 60
+      - ip ssh authentication-retries 3
+      - login block-for 120 attempts 3 within 60
+      - login on-failure log
+      - login on-success log
+    save_when: never
+  notify: save config
+
+- name: Local administrator account (password set only when the account is created)
+  cisco.ios.ios_user:
+    name: netadmin
+    privilege: 15
+    configured_password: "{{ vault_admin_password }}"
+    password_type: secret
+    update_password: on_create
+    state: present
+  notify: save config
+
+- name: NTP client / master
+  cisco.ios.ios_config:
+    lines: "{{ ['ntp master 3'] if (ntp_master | default(false)) else ['ntp server ' ~ ntp_server] }}"
+  notify: save config
+
+- name: Syslog to the NetOps collector + local buffer
+  cisco.ios.ios_config:
+    lines:
+      - logging buffered 16384 informational
+      - logging trap informational
+      - "logging source-interface {{ logging_source }}"
+      - "logging host {{ syslog_server }}"
+  notify: save config
+
+- name: DNS client
+  cisco.ios.ios_config:
+    lines:
+      - "ip name-server {{ dns_server }}"
+  when: inventory_hostname != 'R3-DC'
+  notify: save config
+
+- name: Configuration-change auditing (archive log -> syslog)
+  cisco.ios.ios_config:
+    parents: [archive, log config]
+    lines:
+      - logging enable
+      - notify syslog contenttype plaintext
+      - hidekeys
+  notify: save config
+
+- name: Management-plane ACL (who may SSH to network devices)
+  cisco.ios.ios_config:
+    parents: "ip access-list standard {{ mgmt_acl.name }}"
+    lines: "{{ mgmt_acl.permit | map('regex_replace', '^', 'permit ') | list + ['deny   any log'] }}"
+  notify: save config
+
+- name: Harden VTY lines (SSH only, ACL, timeout)
+  cisco.ios.ios_config:
+    parents: line vty 0 4
+    lines:
+      - "access-class {{ mgmt_acl.name }} in"
+      - exec-timeout 10 0
+      - login local
+      - transport preferred none
+      - transport input ssh
+  notify: save config
+
+- name: Console line
+  cisco.ios.ios_config:
+    parents: line con 0
+    lines:
+      - logging synchronous
+      - transport preferred none
+  notify: save config
+
+- name: Legal login banner
+  cisco.ios.ios_banner:
+    banner: motd
+    text: "{{ login_banner }}"
+    state: present
+  notify: save config
+
+- name: SNMPv3 (authPriv) read-only monitoring
+  cisco.ios.ios_config:
+    lines:
+      - "snmp-server group {{ snmp.group }} v3 priv"
+      - "snmp-server location {{ snmp.location_prefix }}-{{ site_name }}"
+      - "snmp-server contact {{ snmp.contact }}"
+  notify: save config
+
+- name: Check whether the SNMPv3 user already exists
+  cisco.ios.ios_command:
+    commands: show snmp user
+  register: snmp_users
+  changed_when: false
+
+- name: Create SNMPv3 user (only if missing - users are not shown in running-config)
+  cisco.ios.ios_config:
+    lines:
+      - "snmp-server user {{ snmp.user }} {{ snmp.group }} v3 auth sha {{ vault_snmp_auth }} priv aes 128 {{ vault_snmp_priv }}"
+  when: snmp.user not in snmp_users.stdout[0]
+  no_log: true
+  notify: save config

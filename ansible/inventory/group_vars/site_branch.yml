@@ -1,0 +1,12 @@
+---
+site_name: BR
+ospf_area: 20
+site_summary: {prefix: 10.20.0.0, mask: 255.255.0.0}
+mgmt_gateway: 10.20.99.1
+
+vlans:
+  - {id: 40, name: SALES,      network: 10.20.40.0, gateway: 10.20.40.1, dhcp: true}
+  - {id: 50, name: OPERATIONS, network: 10.20.50.0, gateway: 10.20.50.1, dhcp: true}
+  - {id: 99, name: MGMT,       network: 10.20.99.0, gateway: 10.20.99.1, dhcp: false}
+
+acls: []

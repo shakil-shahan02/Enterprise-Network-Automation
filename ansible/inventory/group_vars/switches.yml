@@ -1,0 +1,4 @@
+---
+device_role: switch
+logging_source: Vlan99
+unused_ports_shutdown: true

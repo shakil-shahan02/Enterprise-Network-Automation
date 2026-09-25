@@ -1,0 +1,31 @@
+---
+# Security compliance audit (read-only). Each rule is a regex that MUST (or MUST NOT) match the
+# running-config. Results are written to reports/compliance_report.md.
+- name: Fetch running-config
+  cisco.ios.ios_command:
+    commands: show running-config
+  register: running
+  changed_when: false
+
+- name: Evaluate compliance rules
+  ansible.builtin.set_fact:
+    compliance: "{{ compliance | default([]) + [{'rule': item.name, 'pass': (running.stdout[0] is search(item.regex, multiline=True)) != (item.absent | default(false))}] }}"
+  loop: "{{ compliance_rules }}"
+  loop_control: {label: "{{ item.name }}"}
+
+- name: Summarise
+  ansible.builtin.set_fact:
+    compliance_score: "{{ (compliance | selectattr('pass') | list | length) }}/{{ compliance | length }}"
+    compliance_failed: "{{ compliance | rejectattr('pass') | map(attribute='rule') | list }}"
+
+- name: Show result
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} compliance {{ compliance_score }} {{ ('FAILED: ' ~ compliance_failed | join(', ')) if compliance_failed else 'ALL PASS' }}"
+
+- name: Write compliance report
+  ansible.builtin.template:
+    src: compliance.md.j2
+    dest: "{{ report_dir }}/compliance_report.md"
+    mode: "0644"
+  delegate_to: localhost
+  run_once: true

@@ -1,0 +1,5 @@
+---
+- name: "Part B-8 | Security compliance audit"
+  hosts: routers:switches
+  gather_facts: false
+  roles: [compliance]

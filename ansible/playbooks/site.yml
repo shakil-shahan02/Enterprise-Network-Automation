@@ -1,0 +1,11 @@
+---
+# Full enterprise deployment pipeline: backup -> build -> secure -> verify -> audit
+- import_playbook: 00_facts_inventory.yml
+- import_playbook: 01_backup.yml
+- import_playbook: 02_baseline.yml
+- import_playbook: 03_switching.yml
+- import_playbook: 04_routing.yml
+- import_playbook: 05_services.yml
+- import_playbook: 06_security_acl.yml
+- import_playbook: 07_verify.yml
+- import_playbook: 08_compliance.yml

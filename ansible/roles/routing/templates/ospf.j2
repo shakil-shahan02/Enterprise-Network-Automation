@@ -1,0 +1,24 @@
+{# Multi-area OSPF: area 0 backbone on P2P links + loopbacks; site LANs in the site area,
+   summarised at the ABR with 'area X range'. MD5 authentication on area 0. #}
+router ospf {{ ospf.process_id }}
+ router-id {{ router_id }}
+ log-adjacency-changes
+ auto-cost reference-bandwidth {{ ospf.reference_bandwidth }}
+ area 0 authentication message-digest
+{% if ospf_area is defined %}
+ area {{ ospf_area }} range {{ site_summary.prefix }} {{ site_summary.mask }}
+{% endif %}
+ passive-interface default
+{% for l in p2p_links %}
+ no passive-interface {{ l.interface }}
+{% endfor %}
+ network {{ loopback0 }} 0.0.0.0 area 0
+{% for l in p2p_links %}
+ network {{ (l.ip ~ '/' ~ l.mask) | ansible.utils.ipaddr('network') }} 0.0.0.3 area 0
+{% endfor %}
+{% for v in vlans | default([]) %}
+ network {{ v.network }} 0.0.0.255 area {{ ospf_area }}
+{% endfor %}
+{% if ntp_master | default(false) %}
+ default-information originate always
+{% endif %}

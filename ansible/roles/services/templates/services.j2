@@ -1,0 +1,31 @@
+{# DHCP pools (site routers), DNS server records (DC), NAT/PAT (core) #}
+{% for v in vlans | default([]) if v.dhcp %}
+ip dhcp excluded-address {{ v.network | regex_replace('\.0$', '.1') }} {{ v.network | regex_replace('\.0$', '.20') }}
+{% endfor %}
+{% for v in vlans | default([]) if v.dhcp %}
+ip dhcp pool {{ site_name }}-{{ v.name }}
+ network {{ v.network }} 255.255.255.0
+ default-router {{ v.gateway }}
+ dns-server {{ dns_server }}
+ domain-name {{ domain_name }}
+ lease 1
+{% endfor %}
+{% if dns_records is defined %}
+ip dns server
+{% for host, ip in dns_records.items() %}
+ip host {{ host }}.{{ domain_name }} {{ ip }}
+{% endfor %}
+{% endif %}
+{% if nat is defined %}
+interface {{ nat.outside }}
+ ip nat outside
+{% for i in nat.inside %}
+interface {{ i }}
+ ip nat inside
+{% endfor %}
+ip access-list extended {{ nat.acl }}
+ remark do not translate internal-to-internal traffic
+ deny   ip 10.0.0.0 0.255.255.255 10.0.0.0 0.255.255.255
+ permit ip 10.0.0.0 0.255.255.255 any
+ip nat inside source list {{ nat.acl }} interface {{ nat.outside }} overload
+{% endif %}

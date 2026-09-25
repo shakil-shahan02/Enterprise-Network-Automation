@@ -1,0 +1,73 @@
+---
+# Automated post-change validation. Every check is asserted, so a broken network fails the play.
+- name: Collect operational state (routers)
+  cisco.ios.ios_command:
+    commands:
+      - show ip ospf neighbor
+      - show ip route ospf
+      - show ntp status
+      - show ip interface brief
+  register: rtr_state
+  when: device_role == 'router'
+
+- name: Assert every OSPF adjacency is FULL
+  ansible.builtin.assert:
+    that:
+      - (rtr_state.stdout[0] | regex_findall('FULL') | length) == (p2p_links | length)
+    success_msg: "{{ inventory_hostname }}: {{ p2p_links | length }}/{{ p2p_links | length }} OSPF neighbours FULL"
+    fail_msg: "{{ inventory_hostname }}: OSPF adjacency missing"
+  when: device_role == 'router'
+
+- name: Assert default route learned / originated
+  ansible.builtin.assert:
+    that: "'0.0.0.0/0' in rtr_state.stdout[1] or inventory_hostname == 'R4-CORE'"
+    success_msg: "{{ inventory_hostname }}: default route present"
+  when: device_role == 'router'
+
+- name: Reachability tests from each router (DC web server, NetOps server, Internet)
+  cisco.ios.ios_ping:
+    dest: "{{ item }}"
+    source: Loopback0
+    count: 3
+    state: present
+  loop: [10.30.60.10, 10.30.100.10, 10.0.0.4, 8.8.8.8]
+  register: ping_results
+  when: device_role == 'router'
+
+- name: Collect operational state (switches)
+  cisco.ios.ios_command:
+    commands:
+      - show vlan-switch brief
+      - show interfaces trunk
+      - show spanning-tree summary
+      - show ntp status
+  register: sw_state
+  when: device_role == 'switch'
+
+- name: Assert all site VLANs exist and trunks are up
+  ansible.builtin.assert:
+    that:
+      - vlans | map(attribute='id') | map('string') | difference(sw_state.stdout[0] | regex_findall('(?m)^(\\d+)\\s')) | length == 0
+      - (sw_state.stdout[1] | regex_findall('(?m)^Fa1/\\d+\\s+on\\s+802\\.1q\\s+trunking') | length) == (trunks | length)
+    success_msg: "{{ inventory_hostname }}: {{ vlans | length }} VLANs present, {{ trunks | length }} trunks up"
+  when: device_role == 'switch'
+
+- name: Switch reachability to its gateway and the NTP master
+  cisco.ios.ios_ping:
+    dest: "{{ item }}"
+    count: 3
+    state: present
+  loop: ["{{ mgmt_gateway }}", "{{ ntp_server }}"]
+  when: device_role == 'switch'
+
+- name: Record NTP sync state
+  ansible.builtin.set_fact:
+    ntp_synced: "{{ 'Clock is synchronized' in ((rtr_state.stdout | default(sw_state.stdout))[2 if device_role == 'router' else 3]) }}"
+
+- name: Write verification report
+  ansible.builtin.template:
+    src: report.md.j2
+    dest: "{{ report_dir }}/verification_report.md"
+    mode: "0644"
+  delegate_to: localhost
+  run_once: true

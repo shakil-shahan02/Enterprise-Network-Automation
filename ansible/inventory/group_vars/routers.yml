@@ -1,0 +1,6 @@
+---
+device_role: router
+logging_source: Loopback0
+ospf:
+  process_id: 1
+  reference_bandwidth: 1000

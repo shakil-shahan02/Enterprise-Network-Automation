@@ -1,0 +1,27 @@
+{# Router interfaces: loopback, router-on-a-stick sub-interfaces, point-to-point WAN links #}
+interface Loopback0
+ description ROUTER-ID / MGMT
+ ip address {{ loopback0 }} 255.255.255.255
+{% if trunk_interface is defined %}
+interface {{ trunk_interface }}
+ description TRUNK to {{ trunk_peer }} (router-on-a-stick)
+{% for v in vlans %}
+interface {{ trunk_interface }}.{{ v.id }}
+ description VLAN{{ v.id }}-{{ v.name }}
+ encapsulation dot1Q {{ v.id }}
+ ip address {{ v.gateway }} 255.255.255.0
+{% if v.acl_in is defined %}
+ ip access-group {{ v.acl_in }} in
+{% endif %}
+{% if v.acl_out is defined %}
+ ip access-group {{ v.acl_out }} out
+{% endif %}
+{% endfor %}
+{% endif %}
+{% for l in p2p_links %}
+interface {{ l.interface }}
+ description P2P to {{ l.peer }}
+ ip address {{ l.ip }} {{ l.mask }}
+ ip ospf network point-to-point
+ ip ospf cost {{ l.cost }}
+{% endfor %}

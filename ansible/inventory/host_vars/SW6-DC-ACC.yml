@@ -1,0 +1,11 @@
+---
+mgmt_ip: 10.30.99.12
+switch_layer: access
+stp_root: false
+trunks:
+  - {port: FastEthernet1/1, peer: "SW5-DC-DIST f1/1"}
+  - {port: FastEthernet1/2, peer: "SW5-DC-DIST f1/2"}
+access_ports:
+  - {port: FastEthernet1/5, vlan: 60, host: SRV-WEB1}
+  - {port: FastEthernet1/6, vlan: 100, host: ANSIBLE-SRV}
+

@@ -1,0 +1,62 @@
+---
+# VLAN + trunk/access port management for EtherSwitch (NM-16ESW) switches.
+# NM-16ESW stores VLANs in 'vlan database' mode, so we read the current VLAN table and
+# only create what is missing (idempotent), then manage ports with ios_config.
+- name: Read current VLAN table
+  cisco.ios.ios_command:
+    commands: show vlan-switch brief
+  register: vlan_table
+  changed_when: false
+
+- name: Work out which VLANs are missing
+  ansible.builtin.set_fact:
+    missing_vlans: "{{ vlans | rejectattr('id', 'in', present_ids) | list }}"
+  vars:
+    present_ids: "{{ vlan_table.stdout[0] | regex_findall('(?m)^(\\d+)\\s') | map('int') | list }}"
+
+- name: Create missing VLANs in the VLAN database
+  ansible.netcommon.cli_command:
+    command: "{{ item }}"
+  loop: "{{ ['vlan database'] + (missing_vlans | map(attribute='id') | zip(missing_vlans | map(attribute='name'))
+            | map('join', ' name ') | map('regex_replace', '^', 'vlan ') | list) + ['apply', 'exit'] }}"
+  when: missing_vlans | length > 0
+  changed_when: true
+
+- name: Trunk ports (802.1Q uplinks)
+  cisco.ios.ios_config:
+    parents: "interface {{ item.port }}"
+    lines:
+      - "description TRUNK to {{ item.peer }}"
+      - switchport mode trunk
+      - no shutdown
+  loop: "{{ trunks }}"
+  loop_control: {label: "{{ item.port }}"}
+  notify: save config
+
+- name: Access ports (end hosts)
+  cisco.ios.ios_config:
+    parents: "interface {{ item.port }}"
+    lines:
+      - "description ACCESS {{ item.host }} (VLAN {{ item.vlan }})"
+      - switchport mode access
+      - "switchport access vlan {{ item.vlan }}"
+      - spanning-tree portfast
+      - no shutdown
+  loop: "{{ access_ports }}"
+  loop_control: {label: "{{ item.port }} -> VLAN {{ item.vlan }}"}
+  notify: save config
+
+- name: STP root bridge for all site VLANs on the distribution switch
+  cisco.ios.ios_config:
+    lines: "{{ ([1] + vlans | map(attribute='id') | list) | map('regex_replace', '^(.*)$', 'spanning-tree vlan \\1 priority 4096') | list }}"
+  when: stp_root | bool
+  notify: save config
+
+- name: Management SVI
+  cisco.ios.ios_config:
+    parents: interface Vlan99
+    lines:
+      - description MGMT
+      - "ip address {{ mgmt_ip }} 255.255.255.0"
+      - no shutdown
+  notify: save config

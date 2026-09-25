@@ -1,0 +1,32 @@
+---
+- name: Create timestamp for this backup run
+  ansible.builtin.set_fact:
+    backup_ts: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+  run_once: true
+
+- name: Ensure backup directory exists on the automation server
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    mode: "0750"
+  delegate_to: localhost
+  run_once: true
+
+- name: Back up running-config ({{ inventory_hostname }})
+  cisco.ios.ios_config:
+    backup: true
+    backup_options:
+      dir_path: "{{ backup_dir }}"
+      filename: "{{ inventory_hostname }}_{{ backup_ts }}.cfg"
+  register: backup_result
+
+- name: Maintain a 'latest' copy for Git diffing
+  ansible.builtin.copy:
+    src: "{{ backup_result.backup_path }}"
+    dest: "{{ backup_dir }}/latest/{{ inventory_hostname }}.cfg"
+    mode: "0640"
+  delegate_to: localhost
+
+- name: Show backup location
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }} running-config saved to {{ backup_result.backup_path | basename }}"

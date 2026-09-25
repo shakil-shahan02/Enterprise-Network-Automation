@@ -1,0 +1,39 @@
+---
+# ---------- connection (SSH v2, privilege escalation with enable) ----------
+ansible_connection: ansible.netcommon.network_cli
+ansible_network_os: cisco.ios.ios
+ansible_user: netadmin
+ansible_password: "{{ vault_admin_password }}"
+ansible_become: true
+ansible_become_method: enable
+ansible_become_password: "{{ vault_enable_password }}"
+ansible_network_cli_ssh_type: paramiko
+
+# ---------- enterprise-wide standards (single source of truth) ----------
+domain_name: corp.local
+dns_server: 10.0.0.3
+ntp_server: 10.0.0.4
+syslog_server: 10.30.100.10
+timezone: {name: AEST, offset: 10}
+
+mgmt_acl:
+  name: MGMT-ACCESS
+  permit:                          # source networks allowed to SSH to devices
+    - 10.30.100.0 0.0.0.255          # NETOPS automation VLAN (ANSIBLE-SRV)
+    - 10.10.10.0 0.0.0.255           # HQ IT VLAN
+
+login_banner: |
+  ********************************************************************
+  *  AUTHORISED ACCESS ONLY - ENT-HYBRID-NET (corp.local)            *
+  *  All activity is logged to syslog and monitored. Disconnect now  *
+  *  if you are not an authorised network administrator.             *
+  ********************************************************************
+
+snmp:
+  location_prefix: ENT-HYBRID-NET
+  contact: netops@corp.local
+  group: NETOPS-RO
+  user: nms-monitor
+
+backup_dir: "{{ playbook_dir }}/../backups"
+report_dir: "{{ playbook_dir }}/../reports"

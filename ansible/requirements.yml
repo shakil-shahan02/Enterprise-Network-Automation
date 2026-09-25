@@ -1,0 +1,8 @@
+---
+collections:
+  - name: cisco.ios
+    version: ">=9.0.0"
+  - name: ansible.netcommon
+    version: ">=7.0.0"
+  - name: ansible.utils
+    version: ">=5.0.0"

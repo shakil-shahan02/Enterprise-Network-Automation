@@ -1,0 +1,10 @@
+---
+mgmt_ip: 10.30.99.11
+switch_layer: distribution
+stp_root: true
+trunks:
+  - {port: FastEthernet1/0, peer: "R3-DC f0/0"}
+  - {port: FastEthernet1/1, peer: "SW6-DC-ACC f1/1"}
+  - {port: FastEthernet1/2, peer: "SW6-DC-ACC f1/2"}
+access_ports: []
+

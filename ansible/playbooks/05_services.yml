@@ -1,0 +1,5 @@
+---
+- name: "Part B-5 | Network services - DHCP pools, DNS server records, NAT/PAT"
+  hosts: routers
+  gather_facts: false
+  roles: [services]

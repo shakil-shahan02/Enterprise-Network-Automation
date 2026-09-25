@@ -1,0 +1,24 @@
+---
+- name: "Part B-0 | Discover devices and build a hardware/software inventory"
+  hosts: routers:switches
+  gather_facts: false
+  tasks:
+    - name: Gather IOS facts
+      cisco.ios.ios_facts:
+        gather_subset: [hardware, default]
+
+    - name: Print device summary
+      ansible.builtin.debug:
+        msg: "{{ ansible_net_hostname }} | {{ ansible_net_model | default('n/a') }} | IOS {{ ansible_net_version }} | {{ ansible_net_image | default('') }}"
+
+    - name: Write inventory CSV
+      ansible.builtin.copy:
+        dest: "{{ report_dir }}/device_inventory.csv"
+        content: |
+          hostname,mgmt_ip,role,model,ios_version,image,serial
+          {% for h in ansible_play_hosts_all | sort %}
+          {{ hostvars[h].ansible_net_hostname }},{{ hostvars[h].ansible_host }},{{ hostvars[h].device_role }},{{ hostvars[h].ansible_net_model | default('') }},{{ hostvars[h].ansible_net_version }},{{ hostvars[h].ansible_net_image | default('') }},{{ hostvars[h].ansible_net_serialnum | default('') }}
+          {% endfor %}
+        mode: "0644"
+      delegate_to: localhost
+      run_once: true

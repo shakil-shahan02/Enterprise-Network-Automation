@@ -1,0 +1,11 @@
+---
+mgmt_ip: 10.20.99.12
+switch_layer: access
+stp_root: false
+trunks:
+  - {port: FastEthernet1/1, peer: "SW3-BR-DIST f1/1"}
+  - {port: FastEthernet1/2, peer: "SW3-BR-DIST f1/2"}
+access_ports:
+  - {port: FastEthernet1/5, vlan: 40, host: PC-SALES1}
+  - {port: FastEthernet1/6, vlan: 50, host: PC-OPS1}
+

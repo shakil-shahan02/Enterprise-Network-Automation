@@ -1,0 +1,30 @@
+---
+site_name: HQ
+ospf_area: 10
+site_summary: {prefix: 10.10.0.0, mask: 255.255.0.0}
+mgmt_gateway: 10.10.99.1
+
+vlans:
+  - {id: 10, name: IT,      network: 10.10.10.0, gateway: 10.10.10.1, dhcp: true}
+  - {id: 20, name: FINANCE, network: 10.10.20.0, gateway: 10.10.20.1, dhcp: true, acl_out: FINANCE-PROTECT}
+  - {id: 30, name: GUEST,   network: 10.10.30.0, gateway: 10.10.30.1, dhcp: true, acl_in: GUEST-IN}
+  - {id: 99, name: MGMT,    network: 10.10.99.0, gateway: 10.10.99.1, dhcp: false}
+
+acls:
+  - name: GUEST-IN
+    remark: Guest VLAN - Internet only, no access to internal 10.0.0.0/8
+    aces:
+      - permit udp any any eq bootps
+      - permit udp 10.10.30.0 0.0.0.255 host 10.0.0.3 eq domain
+      - permit icmp 10.10.30.0 0.0.0.255 host 10.10.30.1
+      - deny ip 10.10.30.0 0.0.0.255 10.0.0.0 0.255.255.255 log
+      - permit ip 10.10.30.0 0.0.0.255 any
+  - name: FINANCE-PROTECT
+    remark: Finance hosts reachable only from HQ-IT, DC and loopbacks
+    aces:
+      - permit ip 10.10.10.0 0.0.0.255 10.10.20.0 0.0.0.255
+      - permit ip 10.30.0.0 0.0.255.255 10.10.20.0 0.0.0.255
+      - permit ip 10.0.0.0 0.0.0.255 10.10.20.0 0.0.0.255
+      - deny ip 10.20.0.0 0.0.255.255 10.10.20.0 0.0.0.255 log
+      - deny ip 10.10.30.0 0.0.0.255 10.10.20.0 0.0.0.255 log
+      - permit ip any any

@@ -1,0 +1,19 @@
+---
+# Security ACLs are data-driven: each site group defines 'acls' (name, remark, ordered ACEs).
+- name: Apply extended ACLs from site data
+  cisco.ios.ios_config:
+    parents: "ip access-list extended {{ item.name }}"
+    lines: "{{ ['remark ' ~ item.remark] + item.aces }}"
+  loop: "{{ acls | default([]) }}"
+  loop_control: {label: "{{ item.name }} ({{ item.aces | length }} ACEs)"}
+  notify: save config
+
+- name: Read ACL hit counters
+  cisco.ios.ios_command:
+    commands: "show ip access-lists"
+  register: acl_counters
+  changed_when: false
+
+- name: Show ACL counters
+  ansible.builtin.debug:
+    msg: "{{ acl_counters.stdout_lines[0] }}"

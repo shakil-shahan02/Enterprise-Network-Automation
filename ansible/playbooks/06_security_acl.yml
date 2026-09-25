@@ -1,0 +1,5 @@
+---
+- name: "Part B-6 | Security - data-driven extended ACLs"
+  hosts: routers
+  gather_facts: false
+  roles: [acl]

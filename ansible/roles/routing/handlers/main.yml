@@ -1,0 +1,7 @@
+---
+- name: save config
+  cisco.ios.ios_command:
+    commands:
+      - command: write memory
+        prompt: '\[confirm\]'
+        answer: "\r"
