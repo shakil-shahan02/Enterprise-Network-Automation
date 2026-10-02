@@ -2,4 +2,5 @@
 - name: "Part B-6 | Security - data-driven extended ACLs"
   hosts: routers
   gather_facts: false
+  tags: [acl, security]
   roles: [acl]

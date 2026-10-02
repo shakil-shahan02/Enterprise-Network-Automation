@@ -1,30 +1,107 @@
 ---
-# Automated post-change validation. Every check is asserted, so a broken network fails the play.
+# Automated post-change validation and monitoring. Every check is an assert, so a broken
+# network fails the play. Tags let one check group run on its own, e.g. --tags health
+#   ospf | interfaces | vlans | health | connectivity
 - name: Collect operational state (routers)
+  tags: [always]
   cisco.ios.ios_command:
     commands:
-      - show ip ospf neighbor
-      - show ip route ospf
-      - show ntp status
-      - show ip interface brief
+      - show ip ospf neighbor                              # 0
+      - show ip route ospf                                 # 1
+      - show ntp status                                    # 2
+      - show ip interface brief                            # 3
+      - show processes cpu | include CPU utilization       # 4
+      - show processes memory | include Processor          # 5
   register: rtr_state
   when: device_role == 'router'
 
+- name: Collect operational state (switches)
+  tags: [always]
+  cisco.ios.ios_command:
+    commands:
+      - show vlan-switch brief                             # 0
+      - show interfaces trunk                              # 1
+      - show spanning-tree summary                         # 2
+      - show ntp status                                    # 3
+      - show ip interface brief | include Vlan99           # 4
+      - show processes cpu | include CPU utilization       # 5
+      - show processes memory | include Processor          # 6
+  register: sw_state
+  when: device_role == 'switch'
+
+- name: Normalise outputs
+  tags: [always]
+  ansible.builtin.set_fact:
+    state: "{{ rtr_state.stdout if device_role == 'router' else sw_state.stdout }}"
+    cpu_out: "{{ (rtr_state.stdout[4] if device_role == 'router' else sw_state.stdout[5]) }}"
+    mem_out: "{{ (rtr_state.stdout[5] if device_role == 'router' else sw_state.stdout[6]) }}"
+
+# ---------------------------------------------------------------- routing
 - name: Assert every OSPF adjacency is FULL
+  tags: [ospf, routing]
   ansible.builtin.assert:
     that:
-      - (rtr_state.stdout[0] | regex_findall('FULL') | length) == (p2p_links | length)
+      - (state[0] | regex_findall('FULL') | length) == (p2p_links | length)
     success_msg: "{{ inventory_hostname }}: {{ p2p_links | length }}/{{ p2p_links | length }} OSPF neighbours FULL"
     fail_msg: "{{ inventory_hostname }}: OSPF adjacency missing"
   when: device_role == 'router'
 
 - name: Assert default route learned / originated
+  tags: [ospf, routing]
   ansible.builtin.assert:
-    that: "'0.0.0.0/0' in rtr_state.stdout[1] or inventory_hostname == 'R4-CORE'"
+    that: "'0.0.0.0/0' in state[1] or inventory_hostname == 'R4-CORE'"
     success_msg: "{{ inventory_hostname }}: default route present"
   when: device_role == 'router'
 
-- name: Reachability tests from each router (DC web server, NetOps server, Internet)
+# ---------------------------------------------------------------- interfaces
+- name: Assert Loopback0 and every P2P link are up/up (routers)
+  tags: [interfaces]
+  ansible.builtin.assert:
+    that:
+      - state[3] is search('(?m)^' ~ (item | regex_escape) ~ '\s+\S+\s+\S+\s+\S+\s+up\s+up')
+    success_msg: "{{ inventory_hostname }}: {{ item }} up/up"
+    fail_msg: "{{ inventory_hostname }}: {{ item }} is not up/up"
+    quiet: true
+  loop: "{{ ['Loopback0'] + (p2p_links | map(attribute='interface') | list) }}"
+  when: device_role == 'router'
+
+- name: Assert management SVI Vlan99 is up/up (switches)
+  tags: [interfaces]
+  ansible.builtin.assert:
+    that: state[4] is search('Vlan99\s+\S+\s+\S+\s+\S+\s+up\s+up')
+    success_msg: "{{ inventory_hostname }}: Vlan99 up/up"
+  when: device_role == 'switch'
+
+# ---------------------------------------------------------------- switching
+- name: Assert all site VLANs exist and trunks are up
+  tags: [vlans, switching]
+  ansible.builtin.assert:
+    that:
+      - vlans | map(attribute='id') | map('string') | difference(state[0] | regex_findall('(?m)^(\\d+)\\s')) | length == 0
+      - (state[1] | regex_findall('(?m)^Fa1/\\d+\\s+on\\s+802\\.1q\\s+trunking') | length) == (trunks | length)
+    success_msg: "{{ inventory_hostname }}: {{ vlans | length }} VLANs present, {{ trunks | length }} trunks up"
+  when: device_role == 'switch'
+
+# ---------------------------------------------------------------- health (CPU / memory)
+- name: Work out CPU and memory figures
+  tags: [health]
+  ansible.builtin.set_fact:
+    cpu_5min: "{{ cpu_out | regex_search('five minutes: (\\d+)%', '\\1') | first | int }}"
+    mem_total: "{{ mem_out | regex_search('Total:\\s+(\\d+)', '\\1') | first | int }}"
+    mem_free: "{{ mem_out | regex_search('Free:\\s+(\\d+)', '\\1') | first | int }}"
+
+- name: Assert CPU 5-minute average < 80% and at least 10% processor memory free
+  tags: [health]
+  ansible.builtin.assert:
+    that:
+      - cpu_5min | int < 80
+      - (mem_free | int) / (mem_total | int) >= 0.10
+    success_msg: "{{ inventory_hostname }}: CPU {{ cpu_5min }}% (5 min), memory {{ ((mem_free | int) * 100 / (mem_total | int)) | round(1) }}% free"
+    fail_msg: "{{ inventory_hostname }}: health threshold breached (CPU {{ cpu_5min }}%)"
+
+# ---------------------------------------------------------------- connectivity
+- name: Reachability tests from each router (DC web server, NetOps server, NTP master, Internet)
+  tags: [connectivity]
   cisco.ios.ios_ping:
     dest: "{{ item }}"
     source: Loopback0
@@ -34,25 +111,8 @@
   register: ping_results
   when: device_role == 'router'
 
-- name: Collect operational state (switches)
-  cisco.ios.ios_command:
-    commands:
-      - show vlan-switch brief
-      - show interfaces trunk
-      - show spanning-tree summary
-      - show ntp status
-  register: sw_state
-  when: device_role == 'switch'
-
-- name: Assert all site VLANs exist and trunks are up
-  ansible.builtin.assert:
-    that:
-      - vlans | map(attribute='id') | map('string') | difference(sw_state.stdout[0] | regex_findall('(?m)^(\\d+)\\s')) | length == 0
-      - (sw_state.stdout[1] | regex_findall('(?m)^Fa1/\\d+\\s+on\\s+802\\.1q\\s+trunking') | length) == (trunks | length)
-    success_msg: "{{ inventory_hostname }}: {{ vlans | length }} VLANs present, {{ trunks | length }} trunks up"
-  when: device_role == 'switch'
-
 - name: Switch reachability to its gateway and the NTP master
+  tags: [connectivity]
   cisco.ios.ios_ping:
     dest: "{{ item }}"
     count: 3
@@ -60,11 +120,14 @@
   loop: ["{{ mgmt_gateway }}", "{{ ntp_server }}"]
   when: device_role == 'switch'
 
+# ---------------------------------------------------------------- report
 - name: Record NTP sync state
+  tags: [always]
   ansible.builtin.set_fact:
-    ntp_synced: "{{ 'Clock is synchronized' in ((rtr_state.stdout | default(sw_state.stdout))[2 if device_role == 'router' else 3]) }}"
+    ntp_synced: "{{ 'Clock is synchronized' in state[2 if device_role == 'router' else 3] }}"
 
 - name: Write verification report
+  tags: [always]
   ansible.builtin.template:
     src: report.md.j2
     dest: "{{ report_dir }}/verification_report.md"

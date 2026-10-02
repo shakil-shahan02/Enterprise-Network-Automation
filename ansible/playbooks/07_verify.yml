@@ -2,4 +2,5 @@
 - name: "Part B-7 | Automated verification (OSPF, routes, VLANs, trunks, NTP, reachability)"
   hosts: routers:switches
   gather_facts: false
+  tags: [verify]
   roles: [verify]

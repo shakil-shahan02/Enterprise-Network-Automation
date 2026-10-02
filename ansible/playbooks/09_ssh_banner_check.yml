@@ -2,6 +2,7 @@
 - name: "Part B-9 | Prove SSH v2 management and the legal banner pushed by the baseline role"
   hosts: R1-HQ
   gather_facts: false
+  tags: [ssh_check]
   tasks:
     - name: Read banner, SSH server state and the live automation session
       cisco.ios.ios_command:

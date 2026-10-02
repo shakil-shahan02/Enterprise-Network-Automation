@@ -2,6 +2,7 @@
 - name: "Part B-0 | Discover devices and build a hardware/software inventory"
   hosts: routers:switches
   gather_facts: false
+  tags: [facts, inventory]
   tasks:
     - name: Gather IOS facts
       cisco.ios.ios_facts:

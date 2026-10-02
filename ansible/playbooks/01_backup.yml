@@ -2,4 +2,5 @@
 - name: "Part B-1 | Back up running configurations of all network devices"
   hosts: routers:switches
   gather_facts: false
+  tags: [backup]
   roles: [backup]

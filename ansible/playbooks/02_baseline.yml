@@ -2,4 +2,5 @@
 - name: "Part B-2 | Enterprise baseline - hardening, SSH, NTP, Syslog, DNS, SNMPv3, banner"
   hosts: routers:switches
   gather_facts: false
+  tags: [baseline]
   roles: [baseline]

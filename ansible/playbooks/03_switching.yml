@@ -2,4 +2,5 @@
 - name: "Part B-3 | Switching - VLANs, 802.1Q trunks, access ports, STP root"
   hosts: switches
   gather_facts: false
+  tags: [switching, vlans]
   roles: [vlans]

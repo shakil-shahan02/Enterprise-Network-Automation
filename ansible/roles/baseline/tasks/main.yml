@@ -1,6 +1,15 @@
 ---
-# Enterprise baseline: security hardening + NTP + Syslog + DNS client + management-plane ACL.
+# Enterprise baseline: hostname, security hardening, NTP, Syslog, DNS, management-plane ACL, banner, SNMPv3.
+# Every task is tagged so one section can be run on its own, e.g.  --tags ntp,syslog
+- name: Hostname from the inventory
+  tags: [hostname]
+  cisco.ios.ios_config:
+    lines:
+      - "hostname {{ inventory_hostname }}"
+  notify: save config
+
 - name: Global security hardening and services
+  tags: [hardening, ssh]
   cisco.ios.ios_config:
     lines:
       - service password-encryption
@@ -19,6 +28,7 @@
   notify: save config
 
 - name: Local administrator account (password set only when the account is created)
+  tags: [users, ssh]
   cisco.ios.ios_user:
     name: netadmin
     privilege: 15
@@ -29,11 +39,13 @@
   notify: save config
 
 - name: NTP client / master
+  tags: [ntp]
   cisco.ios.ios_config:
     lines: "{{ ['ntp master 3'] if (ntp_master | default(false)) else ['ntp server ' ~ ntp_server] }}"
   notify: save config
 
 - name: Syslog to the NetOps collector + local buffer
+  tags: [syslog, logging]
   cisco.ios.ios_config:
     lines:
       - logging buffered 16384 informational
@@ -42,6 +54,7 @@
   notify: save config
 
 - name: DNS client
+  tags: [dns]
   cisco.ios.ios_config:
     lines:
       - "ip name-server {{ dns_server }}"
@@ -49,6 +62,7 @@
   notify: save config
 
 - name: Configuration-change auditing (archive log -> syslog)
+  tags: [archive, logging]
   cisco.ios.ios_config:
     parents: [archive, log config]
     lines:
@@ -58,12 +72,14 @@
   notify: save config
 
 - name: Management-plane ACL (who may SSH to network devices)
+  tags: [mgmt_acl, ssh, security]
   cisco.ios.ios_config:
     parents: "ip access-list standard {{ mgmt_acl.name }}"
     lines: "{{ mgmt_acl.permit | map('regex_replace', '^', 'permit ') | list + ['deny   any log'] }}"
   notify: save config
 
 - name: Harden VTY lines (SSH only, ACL, timeout)
+  tags: [vty, ssh, security]
   cisco.ios.ios_config:
     parents: line vty 0 4
     lines:
@@ -74,6 +90,7 @@
   notify: save config
 
 - name: Console line
+  tags: [console]
   cisco.ios.ios_config:
     parents: line con 0
     lines:
@@ -82,6 +99,7 @@
   notify: save config
 
 - name: Legal login banner
+  tags: [banner]
   cisco.ios.ios_banner:
     banner: motd
     text: "{{ login_banner }}"
@@ -89,6 +107,7 @@
   notify: save config
 
 - name: SNMPv3 (authPriv) read-only monitoring
+  tags: [snmp]
   cisco.ios.ios_config:
     lines:
       - "snmp-server group {{ snmp.group }} v3 priv{{ snmp_group_suffix }}"
@@ -97,12 +116,14 @@
   notify: save config
 
 - name: Check whether the SNMPv3 user already exists
+  tags: [snmp]
   cisco.ios.ios_command:
     commands: show snmp user
   register: snmp_users
   changed_when: false
 
 - name: Create SNMPv3 user (only if missing - users are not shown in running-config)
+  tags: [snmp]
   cisco.ios.ios_config:
     lines:
       - "snmp-server user {{ snmp.user }} {{ snmp.group }} v3 auth sha {{ vault_snmp_auth }} priv {{ snmp_priv_proto }} {{ vault_snmp_priv }}"
